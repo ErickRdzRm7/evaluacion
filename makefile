@@ -76,3 +76,19 @@ terraform-apply: check-terraform verify-dirs check-env
 		terraform apply \
 		-var-file="terraform.tfvars" \
 		-auto-approve
+
+# --- Docker -------
+
+# Build and Push Docker Image frontend
+
+docker-build-push-frontend:
+	@echo "🔄 Building and pushing frontend Docker image..."
+	cd $(FRONTEND_DIR) && \
+	docker build -t $(ECR_REGISTRY)/eduia-frontend . && \
+	docker push $(ECR_REGISTRY)/eduia-frontend
+
+update-ecs-service:
+		@echo "🔄 Updating ECS service..."
+		aws ecs update-service --cluster $(ECS_CLUSTER_NAME) --service $(ECS_SERVICE_NAME) --force-new-deployment --region $(AWS_REGION)
+
+
