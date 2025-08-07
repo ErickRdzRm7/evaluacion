@@ -37,7 +37,7 @@ install-ci: check-npm verify-dirs
 # --- Lint ---
 Lint: check-npm
 	@echo "🔍 Linting frontend..."
-	cd $(SRC_DIR) && npm run lint -- --fix
+	npm run lint -- --fix
 # --- Tests ---
 test: check-npm verify-dirs
 	@echo "Running frontend unit tests..."
