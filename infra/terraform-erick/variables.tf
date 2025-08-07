@@ -37,11 +37,6 @@ variable "cluster_name" {
   default = "eduia-cluster"
 }
 
-variable "private_subnet_cidrs" {
-  type        = list(string)
-  description = "CIDR blocks for private subnets"
-}
-
 variable "ecs_sg_frontend" {
   type        = string
   description = "Security group for ECS frontend"

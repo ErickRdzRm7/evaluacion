@@ -3,7 +3,6 @@ module "network" {
   app_name             = var.app_name
   vpc_cidr             = var.vpc_cidr
   app_subnet_cidr      = var.app_subnet_cidr
-  private_subnet_cidrs = var.private_subnet_cidrs
   availability_zones   = var.availability_zones
 }
 
