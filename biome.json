@@ -5,9 +5,7 @@
 		"clientKind": "git",
 		"useIgnoreFile": false
 	},
-	"files": {
-		"ignoreUnknown": false
-	},
+	"files": {},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"

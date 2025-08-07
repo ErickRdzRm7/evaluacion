@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1754596604783" clover="3.2.0">
-  <project timestamp="1754596604784" name="All files">
+<coverage generated="1754599216095" clover="3.2.0">
+  <project timestamp="1754599216095" name="All files">
     <metrics statements="114" coveredstatements="0" conditionals="2" coveredconditionals="1" methods="2" coveredmethods="1" elements="118" coveredelements="2" complexity="0" loc="114" ncloc="114" packages="1" files="2" classes="2"/>
     <file name="layout.tsx" path="/Users/erick/Desktop/evaluacion/evaluacion/src/app/layout.tsx">
       <metrics statements="26" coveredstatements="0" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
