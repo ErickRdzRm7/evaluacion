@@ -1,0 +1,45 @@
+name: CI/CD Pipeline - Frontend, Backend & Infra
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    
+permissions:
+  id-token: write
+  contents: read
+    
+env:
+  NODE_VERSION: '24.3.0'
+  APP_NAME: eduia
+  INFRA_DIR: infra/terraform-erick
+  DEPLOY_ENV: dev
+
+jobs:
+  ci-build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: v24.3.0
+          cache: 'npm'
+          cache-dependency-path: |
+            ./package-lock.json
+
+      - name: Install Node.js dependencies
+        run: make install-ci
+
+      - name: Lint with Biome
+        run: make Biome
+
+      - name: Run Unit Tests
+        run: make test
+    
