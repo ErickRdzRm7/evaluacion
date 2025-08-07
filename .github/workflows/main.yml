@@ -45,3 +45,46 @@ jobs:
       - name: Run Unit Tests
         run: make test
     
+  cd-deploy-infra:
+    name: Deploy Infrastructure
+    needs: ci-build-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.REGION }}
+      ENVIRONMENT: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3 
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: make terraform-init
+
+      - name: Terraform Validate
+        run: make terraform-validate
+
+      - name: Terraform Plan
+        run: make terraform-plan
+        env:
+          TF_VAR_environment: dev
+
+
+      - name: Terraform Apply
+        run: make terraform-apply
+        env:
+          TF_VAR_environment: dev

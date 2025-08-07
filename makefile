@@ -1,5 +1,6 @@
 # === Makefile for Node.js + Terraform + Docker ===
 SRC_DIR=./src
+INFRA_DIR=infra/terraform-erick
 ENV ?= dev
 
 # --- Validation helpers ---
@@ -17,7 +18,7 @@ check-awscli:
 
 verify-dirs:
 	@test -d "$(SRC_DIR)" || (echo " Frontend dir $(SRC_DIR) not found" && exit 1)
-#	@test -d "$(INFRA_DIR)" || (echo " Infra dir $(INFRA_DIR) not found" && exit 1)
+	@test -d "$(INFRA_DIR)" || (echo " Infra dir $(INFRA_DIR) not found" && exit 1)
 
 check-env:
 ifndef ENV
@@ -50,3 +51,28 @@ test-watch:
 dev: check-npm verify-dirs
 	@echo "Starting dev server..."
 	cd $(SRC_DIR) && npm run dev
+
+
+# --- Terraform ---
+terraform-init: check-terraform verify-dirs
+	@echo "Terraform init in $(INFRA_DIR)..."
+	cd $(INFRA_DIR) && terraform init
+
+terraform-validate: check-terraform verify-dirs
+	@echo "Validating Terraform..."
+	cd $(INFRA_DIR) && terraform validate
+
+terraform-plan:
+	@echo "Running Terraform plan..."
+	cd $(INFRA_DIR) && \
+	terraform plan \
+		-var-file="terraform.tfvars" \
+		-out=tfplan.out
+
+
+terraform-apply: check-terraform verify-dirs check-env
+	@echo "Applying Terraform..."
+	cd $(INFRA_DIR) && \
+		terraform apply \
+		-var-file="terraform.tfvars" \
+		-auto-approve
