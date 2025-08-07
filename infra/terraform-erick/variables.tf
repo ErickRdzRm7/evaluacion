@@ -1,6 +1,6 @@
 variable "app_name" {
   type    = string
-  default = "eduia"
+  default = "app"
 }
 
 variable "aws_region" {
@@ -34,7 +34,7 @@ variable "availability_zones" {
 
 variable "cluster_name" {
   type    = string
-  default = "eduia-cluster"
+  default = "app-cluster"
 }
 
 variable "ecs_sg_frontend" {
