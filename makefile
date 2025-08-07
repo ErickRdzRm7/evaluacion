@@ -1,7 +1,5 @@
 # === Makefile for Node.js + Terraform + Docker ===
 SRC_DIR=./src
-BACKEND_DIR=./backend/Models
-INFRA_DIR=infra/terraform-erick
 ENV ?= dev
 
 # --- Validation helpers ---
@@ -19,7 +17,7 @@ check-awscli:
 
 verify-dirs:
 	@test -d "$(SRC_DIR)" || (echo " Frontend dir $(SRC_DIR) not found" && exit 1)
-	@test -d "$(INFRA_DIR)" || (echo " Infra dir $(INFRA_DIR) not found" && exit 1)
+#	@test -d "$(INFRA_DIR)" || (echo " Infra dir $(INFRA_DIR) not found" && exit 1)
 
 check-env:
 ifndef ENV
