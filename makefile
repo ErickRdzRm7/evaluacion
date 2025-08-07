@@ -52,8 +52,7 @@ dev: check-npm verify-dirs
 	@echo "Starting dev server..."
 	cd $(SRC_DIR) && npm run dev
 
-
-# --- Terraform ---
+# --- Terraform --
 terraform-init: check-terraform verify-dirs
 	@echo "Terraform init in $(INFRA_DIR)..."
 	cd $(INFRA_DIR) && terraform init
