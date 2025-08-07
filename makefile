@@ -4,8 +4,8 @@ SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 ENV ?= dev
 
-name: CI/CD Pipeline - Frontend & Infra
 
+name: CI/CD Pipeline - Frontend & Infra
 
 on:
   push:
