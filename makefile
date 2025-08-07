@@ -1,52 +1,91 @@
-# === Makefile for Node.js + Terraform + Docker ===
-SRC_DIR=./src
-ENV ?= dev
+name: CI/CD Pipeline - Frontend & Infra
 
-# --- Validation helpers ---
-check-npm:
-	@command -v npm >/dev/null 2>&1 || (echo " npm is not installed." && exit 1)
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    
+permissions:
+  id-token: write
+  contents: read
+    
+env:
+  NODE_VERSION: '24.3.0'
+  APP_NAME: evaluacion
+  DEPLOY_ENV: dev
 
-check-terraform:
-	@command -v terraform >/dev/null 2>&1 || (echo " terraform is not installed." && exit 1)
+jobs:
+  ci-build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
 
-check-docker:
-	@command -v docker >/dev/null 2>&1 || (echo " docker is not installed." && exit 1)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-check-awscli:
-	@command -v az >/dev/null 2>&1 || (echo " AWS CLI is not installed." && exit 1)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: v24.3.0
+          cache: 'npm'
+          cache-dependency-path: |
+            ./package-lock.json
 
-verify-dirs:
-	@test -d "$(SRC_DIR)" || (echo " Frontend dir $(SRC_DIR) not found" && exit 1)
-#	@test -d "$(INFRA_DIR)" || (echo " Infra dir $(INFRA_DIR) not found" && exit 1)
+      - name: Install Node.js 
+        run: make install
+    
+      - name: Install Node.js dependencies
+        run: make install-ci
 
-check-env:
-ifndef ENV
-	$(error ENV is not set. Usage: make <target> ENV=dev|staging|prod)
-endif
+      - name: Lint 
+        run: make Lint
 
-# --- Node.js Tasks ---
-install: check-npm verify-dirs
-	@echo "Installing dependencies..."
-	@if [ -f package.json ]; then npm install ci; fi
-	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm install ci; fi
+      - name: Run Unit Tests
+        run: make test
+    
+  cd-deploy-infra:
+    name: Deploy Infrastructure
+    needs: ci-build-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
 
-install-ci: check-npm verify-dirs
-	@if [ -f package.json ]; then npm ci; fi
-	@if [ -f $(FRONTEND_DIR)/package.json ]; then cd $(FRONTEND_DIR) && npm ci; fi
 
-# --- Lint ---
-Lint: check-npm
-	@echo "🔍 Linting frontend..."
-	npm run lint -- --fix
-# --- Tests ---
-test: check-npm verify-dirs
-	@echo "Running frontend unit tests..."
-	cd $(SRC_DIR) && npx vitest run --coverage
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.REGION }}
+      ENVIRONMENT: dev
 
-test-watch:
-	cd $(SRC_DIR) && npx vitest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-# --- Dev Server ---
-dev: check-npm verify-dirs
-	@echo "Starting dev server..."
-	cd $(SRC_DIR) && npm run dev
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3 
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: make terraform-init
+
+      - name: Terraform Validate
+        run: make terraform-validate
+
+      - name: Terraform Plan
+        run: make terraform-plan
+        env:
+          TF_VAR_environment: dev
+
+
+      - name: Terraform Apply
+        run: make terraform-apply
+        env:
+          TF_VAR_environment: dev
