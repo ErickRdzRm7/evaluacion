@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Frontend, Backend & Infra
+name: CI/CD Pipeline - Frontend & Infra
 
 on:
   push:
