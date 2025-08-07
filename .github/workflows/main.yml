@@ -39,8 +39,8 @@ jobs:
       - name: Install Node.js dependencies
         run: make install-ci
 
-      - name: Lint with Biome
-        run: make Biome
+      - name: Lint 
+        run: make Lint
 
       - name: Run Unit Tests
         run: make test

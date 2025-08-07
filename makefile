@@ -35,9 +35,9 @@ install-ci: check-npm verify-dirs
 	@if [ -f $(FRONTEND_DIR)/package.json ]; then cd $(FRONTEND_DIR) && npm ci; fi
 
 # --- Lint ---
-Biome: check-npm
+Lint: check-npm
 	@echo "🔍 Linting frontend..."
-	cd $(SRC_DIR) && npx biome check --fix
+	cd $(SRC_DIR) && npm run lint -- --fix
 # --- Tests ---
 test: check-npm verify-dirs
 	@echo "Running frontend unit tests..."
