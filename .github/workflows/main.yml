@@ -9,7 +9,9 @@ on:
     
 permissions:
   id-token: write
-  contents: read
+  contents: write
+  issues: write   # para comentarios en issues/PR
+  pull-requests: write # para comentar en PRs
     
 env:
   NODE_VERSION: '24.3.0'
@@ -20,11 +22,14 @@ jobs:
   ci-build-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0 
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,6 +44,17 @@ jobs:
       - name: Install Node.js dependencies
         run: make install-ci
 
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make semantic-release   
+        
+      - name: Get latest version tag
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT  
+        
       - name: Lint 
         run: make Lint
 
@@ -86,6 +102,63 @@ jobs:
 
 
       - name: Terraform Apply
-        run: make terraform-apply
+        run:  make terraform-apply
         env:
           TF_VAR_environment: dev
+
+  cd-deploy-app:
+    name: Deploy Application
+    needs: cd-deploy-infra
+    runs-on: ubuntu-latest
+    env:
+      ECS_CLUSTER_NAME:  ${{ secrets.ECS_CLUSTER_NAME }}
+      ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+
+      - name:  Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.REGION }}
+
+      - name:  Authenticate to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: true
+
+        
+
+      - name:  Setup Node.js for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.3.0'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm install
+
+      - name: Set variables
+        run: |
+         echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
+         echo "REGION=us-east-2" >> $GITHUB_ENV
+
+      - name: 🐳 Build & Push Frontend Docker Image
+        run: make docker-build-push-frontend
+           ECR_REGISTRY="${{ secrets.ECR_REGISTRY }}" \
+           ECR_REPO="${{ secrets.ECR_REPO }}" \
+           REGION="${{ secrets.REGION }}"
+
+      - name: 🚀 Update ECS Service
+        run: |
+          aws ecs update-service \
+          --cluster $ECS_CLUSTER_NAME \
+          --service $ECS_SERVICE_NAME \
+          --force-new-deployment \
+          --region $REGION
+        
+  
