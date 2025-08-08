@@ -4,6 +4,7 @@
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
+INFRA_DIR=infra/terraform-erick
 # --- Validation helpers ---
 check-npm:
 	@command -v npm >/dev/null 2>&1 || (echo " npm is not installed." && exit 1)
