@@ -9,7 +9,9 @@ on:
     
 permissions:
   id-token: write
-  contents: read
+  contents: write
+  issues: write   # para comentarios en issues/PR
+  pull-requests: write # para comentar en PRs
     
 env:
   NODE_VERSION: '24.3.0'
@@ -20,11 +22,14 @@ jobs:
   ci-build-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0 
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,6 +44,10 @@ jobs:
       - name: Install Node.js dependencies
         run: make install-ci
 
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release    
       - name: Lint 
         run: make Lint
 
