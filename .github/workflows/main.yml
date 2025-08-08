@@ -86,7 +86,7 @@ jobs:
 
 
       - name: Terraform Apply
-        run: make terraform-apply
+        run:  make terraform-apply
         env:
           TF_VAR_environment: dev
 
