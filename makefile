@@ -39,11 +39,7 @@ install: check-npm verify-dirs
 install-ci: check-npm verify-dirs
 	@if [ -f package.json ]; then npm ci; fi
 	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
-
-semantic-release: semantic-release
-	@echo "Run semantic-release..."
-	npx semantic-release
-
+	
 # --- Lint ---
 Lint: check-npm
 	@echo "🔍 Linting frontend..."
