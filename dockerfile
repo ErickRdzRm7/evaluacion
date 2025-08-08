@@ -11,7 +11,7 @@ RUN npm install -g expo-cli --no-cache
 COPY package.json package-lock.json ./
 
 # Instala dependencias
-RUN npm install ci
+RUN npm install 
 
 # Copia el resto del código
 COPY . .
