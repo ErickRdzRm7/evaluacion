@@ -94,6 +94,8 @@ jobs:
     name: Deploy Application
     needs: cd-deploy-infra
     runs-on: ubuntu-latest
+    env:
+      ECS_CLUSTER_NAME:  ${{ secrets.ECS_CLUSTER_NAME }}
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
@@ -133,8 +135,9 @@ jobs:
       - name: 🚀 Update ECS Service
         run: |
           aws ecs update-service \
-            --cluster $ECS_CLUSTER_NAME \
-            --service $ECS_SERVICE_NAME \
-            --force-new-deployment \
-            --region $REGION
+          --cluster $ECS_CLUSTER_NAME \
+          --service $ECS_SERVICE_NAME \
+          --force-new-deployment \
+          --region $REGION
         
+  
