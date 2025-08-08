@@ -33,7 +33,7 @@ install: check-npm verify-dirs
 
 install-ci: check-npm verify-dirs
 	@if [ -f package.json ]; then npm ci; fi
-	@if [ -f $(FRONTEND_DIR)/package.json ]; then cd $(FRONTEND_DIR) && npm ci; fi
+	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
 
 # --- Lint ---
 Lint: check-npm
