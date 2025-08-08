@@ -1,10 +1,11 @@
-#include .env
-#export $(shell sed 's/=.*//' .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
+IMAGE_TAG=latest
 # --- Validation helpers ---
 check-npm:
 	@command -v npm >/dev/null 2>&1 || (echo " npm is not installed." && exit 1)
