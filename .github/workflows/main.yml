@@ -86,7 +86,7 @@ jobs:
 
 
       - name: Terraform Apply
-        run: make terraform-apply
+        run: cd infra/terraform-erick && terraform destroy --auto-approve
         env:
           TF_VAR_environment: dev
 
