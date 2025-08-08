@@ -19,7 +19,7 @@ COPY . .
 # Variables de entorno
 ENV NODE_ENV=development
 
-EXPOSE 3000 
+EXPOSE 80 
 
 # Para Next.js:
 CMD ["npm", "run", "dev"]
