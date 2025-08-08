@@ -1,8 +1,13 @@
-include .env
-export $(shell sed 's/=.*//' .env)
+#include .env
+#export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
+SRC_DIR=./src
+INFRA_DIR=infra/terraform-erick
+IMAGE_TAG=latest
+ECR_REPO=app-frontend
+ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
 check-npm:
 	@command -v npm >/dev/null 2>&1 || (echo " npm is not installed." && exit 1)
@@ -33,7 +38,11 @@ install: check-npm verify-dirs
 
 install-ci: check-npm verify-dirs
 	@if [ -f package.json ]; then npm ci; fi
-	@if [ -f $(FRONTEND_DIR)/package.json ]; then cd $(FRONTEND_DIR) && npm ci; fi
+	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
+
+semantic-release: semantic-release
+	@echo "Run semantic-release..."
+	npx semantic-release
 
 # --- Lint ---
 Lint: check-npm
