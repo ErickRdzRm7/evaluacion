@@ -3,7 +3,7 @@ terraform {
     bucket       = "mi-terraform-state-erick"
     key          = "infra/terraform-erick/terraform.tfstate"
     region       = "us-east-2"
-    use_lockfile = true
+
   }
 }
 
