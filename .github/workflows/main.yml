@@ -111,6 +111,10 @@ jobs:
 
       - name:  Authenticate to ECR
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: true
+
+        
 
       - name:  Setup Node.js for Frontend
         uses: actions/setup-node@v4
