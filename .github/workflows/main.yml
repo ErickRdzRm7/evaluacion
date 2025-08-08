@@ -89,3 +89,44 @@ jobs:
         run: make terraform-apply
         env:
           TF_VAR_environment: dev
+
+  cd-deploy-app:
+    name: Deploy Application
+    needs: cd-deploy-infra
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🔑 Authenticate to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: 🧱 Setup Node.js for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.3.0'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm install
+
+      - name: 🐳 Build & Push Frontend Docker Image
+        run: make docker-build-push-frontend
+
+      - name: 🚀 Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER_NAME \
+            --service $ECS_SERVICE_NAME \
+            --force-new-deployment \
+            --region $REGION
+        
