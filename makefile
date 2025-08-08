@@ -7,6 +7,7 @@ SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 IMAGE_TAG=latest
 ECR_REPO=app-frontend
+ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
 check-npm:
 	@command -v npm >/dev/null 2>&1 || (echo " npm is not installed." && exit 1)
