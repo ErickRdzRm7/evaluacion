@@ -40,7 +40,7 @@ install-ci: check-npm verify-dirs
 	@if [ -f package.json ]; then npm ci; fi
 	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
 
-Run semantic-release: Run semantic-release
+semantic-release: Run semantic-release
 	@echo "Run semantic-release..."
 	npx semantic-release
 
