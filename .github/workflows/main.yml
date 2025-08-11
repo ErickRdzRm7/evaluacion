@@ -2,7 +2,7 @@ name: CI/CD Pipeline - Frontend & Infra
 
 on:
   push:
-    branches: [master]
+    branches: [dev, staging, master]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -78,6 +78,18 @@ jobs:
       - name: Terraform Init
         run: make terraform-init
 
+      - name: Select Terraform workspace
+        run: |
+            if [[ "${GITHUB_REF_NAME}" == "dev" ]]; then
+              terraform workspace select "dev" || terraform workspace new "dev"
+            elif [[ "${GITHUB_REF_NAME}" == "staging" ]]; then
+              terraform workspace select "staging" || terraform workspace new "staging"
+            elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+              terraform workspace select "prod" || terraform workspace new "prod"
+            fi
+        working-directory: ./infra
+    
+
       - name: Terraform Validate
         run: make terraform-validate
 
@@ -134,10 +146,12 @@ jobs:
          echo "REGION=us-east-2" >> $GITHUB_ENV
 
       - name: 🐳 Build & Push Frontend Docker Image
-        run: make docker-build-push-frontend
-           ECR_REGISTRY="${{ secrets.ECR_REGISTRY }}" \
-           ECR_REPO="${{ secrets.ECR_REPO }}" \
-           REGION="${{ secrets.REGION }}"
+        run: |
+            IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
+            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+            ECR_REPO=${{ secrets.ECR_REPO }} \
+            REGION=${{ secrets.REGION }} \
+            make docker-build-push-frontend
 
       - name: 🚀 Update ECS Service
         run: |

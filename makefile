@@ -5,7 +5,7 @@ ENV ?= dev
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
-IMAGE_TAG=latest
+#IMAGE_TAG=latest
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
