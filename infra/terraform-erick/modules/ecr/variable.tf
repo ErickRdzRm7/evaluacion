@@ -4,6 +4,6 @@ variable app_name {
   description = "The name of the application used in resource names."
 }
 variable "environment" {
-  description = "Deployment environment (e.g., dev, staging, prod)"
+  description = "Deployment environment"
   type        = string
 }

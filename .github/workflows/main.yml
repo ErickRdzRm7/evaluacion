@@ -2,7 +2,10 @@ name: CI/CD Pipeline - Frontend & Infra
 
 on:
   push:
-    branches: [master]
+    branches:
+      - development
+      - staging
+      - main
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -14,7 +17,7 @@ permissions:
 env:
   NODE_VERSION: '24.3.0'
   APP_NAME: evaluacion
-  DEPLOY_ENV: dev
+  DEPLOY_ENV: staging
 
 jobs:
   ci-build-test:
@@ -56,7 +59,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.REGION }}
-      ENVIRONMENT: dev
+      ENVIRONMENT: staging
 
     steps:
       - name: Checkout code
@@ -75,21 +78,24 @@ jobs:
 
       - name: Terraform Init
         run: make terraform-init
-
+      
+      - name: Select workspace
+        run: terraform workspace select "${{ github.ref_name }}" || terraform workspace new "${{ github.ref_name }}"
+        working-directory: ./infra
+  
       - name: Terraform Validate
         run: make terraform-validate
 
       - name: Terraform Plan
         run: make terraform-plan
         env:
-          TF_VAR_environment: dev
-
+          TF_VAR_environment: staging
 
       - name: Terraform Apply
         run:  make terraform-apply
         env:
-          TF_VAR_environment: dev
-
+          TF_VAR_environment: staging
+          
   cd-deploy-app:
     name: Deploy Application
     needs: cd-deploy-infra
