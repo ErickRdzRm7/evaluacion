@@ -1,5 +1,5 @@
-#include .env
-#export $(shell sed 's/=.*//' .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
@@ -97,11 +97,11 @@ docker-build-push-frontend:
 	@echo "Building Docker image..."
 	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
 	@echo "Tagging image..."
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
 	@echo "Logging in to ECR..."
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	@echo "Pushing to ECR..."
-	docker push $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
 
 update-ecs-service:
 		@echo "Updating ECS service..."
