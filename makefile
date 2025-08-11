@@ -5,6 +5,10 @@ ENV ?= dev
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
+BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
+COMMIT_HASH := $(shell git rev-parse --short HEAD)
+IMAGE_TAG := $(BRANCH_NAME)-$(COMMIT_HASH)
+
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
@@ -90,12 +94,8 @@ print-vars:
 	@echo "IMAGE_TAG=$(IMAGE_TAG)"
 	@echo "ECR_REGISTRY=$(ECR_REGISTRY)"
 
-# Datos de git
-BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
-COMMIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_TAG := $(BRANCH_NAME)-$(COMMIT_HASH)
 
-docker-build-push:
+docker-build-push-frontend:
 	@echo "Building Docker image with tag $(IMAGE_TAG)..."
 	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
 	@echo "Tagging image for ECR..."
