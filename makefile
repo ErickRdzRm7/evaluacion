@@ -89,12 +89,6 @@ terraform-apply: check-terraform verify-dirs check-env
 
 # Build and Push Docker Image frontend
 
-print-vars:
-	@echo "ECR_REPO=$(ECR_REPO)"
-	@echo "IMAGE_TAG=$(IMAGE_TAG)"
-	@echo "ECR_REGISTRY=$(ECR_REGISTRY)"
-
-
 docker-build-push-frontend:
 	@echo "Building Docker image with tag $(IMAGE_TAG)..."
 	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
