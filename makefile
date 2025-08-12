@@ -8,7 +8,6 @@ INFRA_DIR=infra/terraform-erick
 BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 IMAGE_TAG ?= $(if $(VERSION),$(VERSION),$(BRANCH_NAME)-$(COMMIT_HASH))
-
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
@@ -90,26 +89,24 @@ terraform-apply: check-terraform verify-dirs check-env
 # Build and Push Docker Image frontend
 
 docker-build-push-frontend: check-env
-	@echo "Building Docker image with tag $(IMAGE_TAG)..."
-	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
-	@echo "Tagging image for ECR..."
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
+	@echo "Building multi-arch Docker image with tag $(IMAGE_TAG) and latest (if main)..."
+	docker buildx create --use || true
+
+	# Build and push branch+commit tag
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-t $(ECR_REGISTRY):$(IMAGE_TAG) \
+		--push \
+		.
 
 ifeq ($(BRANCH_NAME),main)
-	@echo "Tagging image as latest for branch main..."
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):latest
+	# Build and push latest tag (solo main)
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-t $(ECR_REGISTRY):latest \
+		--push \
+		.
 endif
-	@echo "Logging in to ECR..."
-	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 
-	@echo "Pushing image with tag $(IMAGE_TAG)..."
-	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
-
-ifeq ($(BRANCH_NAME),main)
-	@echo "Pushing image with tag latest..."
-	docker push $(ECR_REGISTRY):latest
-endif
-	@echo "Done: pushed $(IMAGE_TAG) and latest (if main branch)."
+	@echo "Done: pushed images."
 
 update-ecs-service:
 		@echo "Updating ECS service..."
