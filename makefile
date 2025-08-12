@@ -89,6 +89,8 @@ terraform-apply: check-terraform verify-dirs check-env
 # Build and Push Docker Image frontend
 
 docker-build-push-frontend: check-env
+	@echo "Logging in to ECR..."
+	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	@echo "Building multi-arch Docker image with tag $(IMAGE_TAG) and latest (if main)..."
 	docker buildx create --use || true
 
