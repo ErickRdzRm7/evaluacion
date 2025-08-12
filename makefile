@@ -1,5 +1,5 @@
-#include .env
-#export $(shell sed 's/=.*//' .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
@@ -90,15 +90,26 @@ terraform-apply: check-terraform verify-dirs check-env
 # Build and Push Docker Image frontend
 
 docker-build-push-frontend:
-	@echo "Building Docker image with tag $(IMAGE_TAG)..."
-	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
+	@echo "Building Docker image with tags $(IMAGE_TAG) and latest..."
+	# Construye la imagen con la etiqueta dinámica y la etiqueta 'latest' en un solo comando
+	docker build -t $(ECR_REPO):$(IMAGE_TAG) -t $(ECR_REPO):latest .
+	
 	@echo "Tagging image for ECR..."
+	# Etiqueta la imagen dinámica para ECR
 	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
+	# Etiqueta la imagen 'latest' para ECR
+	docker tag $(ECR_REPO):latest $(ECR_REGISTRY):latest
+	
 	@echo "Logging in to ECR..."
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
-	@echo "Pushing image to ECR..."
+	
+	@echo "Pushing images to ECR..."
+	# Empuja la imagen con la etiqueta dinámica
 	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
-	@echo "Done: $(ECR_REGISTRY):$(IMAGE_TAG)"
+	# Empuja la imagen con la etiqueta 'latest'
+	docker push $(ECR_REGISTRY):latest
+	
+	@echo "Done: $(ECR_REGISTRY):$(IMAGE_TAG) and $(ECR_REGISTRY):latest"
 
 update-ecs-service:
 		@echo "Updating ECS service..."
