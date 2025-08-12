@@ -103,5 +103,3 @@ docker-build-push-frontend:
 update-ecs-service:
 		@echo "Updating ECS service..."
 		aws ecs update-service --cluster $(ECS_CLUSTER_NAME) --service $(ECS_SERVICE_NAME) --force-new-deployment --region $(REGION)
-
-
