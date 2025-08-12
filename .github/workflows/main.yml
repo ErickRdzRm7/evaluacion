@@ -2,7 +2,7 @@ name: CI/CD Pipeline - Frontend & Infra
 
 on:
   push:
-    branches: [master]
+    branches: [dev, staging, master]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -16,7 +16,7 @@ permissions:
 env:
   NODE_VERSION: '24.3.0'
   APP_NAME: evaluacion
-  DEPLOY_ENV: production
+  DEPLOY_ENV: prod
 
 jobs:
   ci-build-test:
@@ -148,11 +148,15 @@ jobs:
          echo "REGION=us-east-2" >> $GITHUB_ENV
 
       - name: 🐳 Build & Push Frontend Docker Image
-        run: make docker-build-push-frontend
-           ECR_REGISTRY="${{ secrets.ECR_REGISTRY }}" \
-           ECR_REPO="${{ secrets.ECR_REPO }}" \
-           REGION="${{ secrets.REGION }}"
+        run: |
+            IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
+            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+            ECR_REPO=${{ secrets.ECR_REPO }} \
+            ACCOUNT_ID=${{ secrets.ACCOUNT_ID }} \
+            REGION=${{ secrets.REGION }} \
+            make docker-build-push-frontend
 
+            
       - name: 🚀 Update ECS Service
         run: |
           aws ecs update-service \

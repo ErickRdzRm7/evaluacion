@@ -24,7 +24,7 @@ resource "aws_ecs_task_definition" "frontend" {
       environment = [
         {
           name  = "NODE"
-          value = "production"
+          value = "prod"
         }
       ]
     }
