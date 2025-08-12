@@ -9,9 +9,7 @@ on:
     
 permissions:
   id-token: write
-  contents: write
-  issues: write   # para comentarios en issues/PR
-  pull-requests: write # para comentar en PRs
+  contents: read
     
 env:
   NODE_VERSION: '24.3.0'
@@ -42,19 +40,7 @@ jobs:
         run: make install
     
       - name: Install Node.js dependencies
-        run: make install-ci
-
-      - name: Run semantic-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make semantic-release   
-        
-      - name: Get latest version tag
-        id: version
-        run: |
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT  
-        
+        run: make install-ci        
       - name: Lint 
         run: make Lint
 
@@ -72,7 +58,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.REGION }}
-      ENVIRONMENT: production
+      ENVIRONMENT: prod
 
     steps:
       - name: Checkout code
@@ -98,13 +84,13 @@ jobs:
       - name: Terraform Plan
         run: make terraform-plan
         env:
-          TF_VAR_environment: production
+          TF_VAR_environment: prod
 
 
       - name: Terraform Apply
         run:  make terraform-apply
         env:
-          TF_VAR_environment: production
+          TF_VAR_environment: prod
 
   cd-deploy-app:
     name: Deploy Application
@@ -156,7 +142,6 @@ jobs:
             REGION=${{ secrets.REGION }} \
             make docker-build-push-frontend
 
-            
       - name: 🚀 Update ECS Service
         run: |
           aws ecs update-service \
