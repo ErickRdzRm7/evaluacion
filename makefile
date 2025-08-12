@@ -1,5 +1,5 @@
-include .env
-export $(shell sed 's/=.*//' .env)
+#include .env
+#export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= prod
 IMAGE_NAME ?= dockerfile
@@ -7,7 +7,7 @@ SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_TAG := $(BRANCH_NAME)-$(COMMIT_HASH)
+IMAGE_TAG ?= $(if $(VERSION),$(VERSION),$(BRANCH_NAME)-$(COMMIT_HASH))
 
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
