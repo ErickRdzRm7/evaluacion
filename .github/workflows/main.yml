@@ -4,7 +4,7 @@ on:
   push:
     branches: [dev, staging, main]
   pull_request:
-    branches: [main]
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
     
 permissions:
@@ -21,7 +21,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,55 +54,44 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Nueva versión: $VERSION"
         
-
-  cd-deploy-infra:
-    name: Deploy Infrastructure
-    needs: ci-build-test
+  atlantis:
+    name: Atlantis
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
-
-
+    if: github.event_name == 'pull_request'
+    
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+      ATLANTIS_GH_USER: ErickRdzRm7
+      TF_VAR_access_key: ${{ secrets.TF_VAR_ACCESS_KEY }}
+      TF_VAR_secret_key: ${{ secrets.TF_VAR_SECRET_KEY }}
       AWS_REGION: ${{ secrets.REGION }}
-      ENVIRONMENT: prod
-
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup AWS CLI
-        uses: aws-actions/configure-aws-credentials@v3 
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-2
-
+        
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
-      - name: Terraform Init
-        run: make terraform-init
-
-      - name: Terraform Validate
-        run: make terraform-validate
-
-      - name: Terraform Plan
-        run: make terraform-plan
-        env:
-          TF_VAR_environment: prod
-
-
-      - name: Terraform Apply
-        run:  make terraform-apply
-        env:
-          TF_VAR_environment: prod
+      - name: Run Atlantis
+        run: |
+          docker run --rm \
+            -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+            -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+            -e TF_VAR_access_key=$TF_VAR_access_key \
+            -e TF_VAR_secret_key=$TF_VAR_secret_key \
+            -e AWS_REGION=$AWS_REGION \
+            -v $(pwd):/repos \
+            ghcr.io/runatlantis/atlantis:latest \
+            server --gh-user=$ATLANTIS_GH_USER \
+            --gh-token=$ATLANTIS_GH_TOKEN \
+            --dir /repos
 
   cd-deploy-app:
     name: Deploy Application
-    needs: cd-deploy-infra
+    needs: ci-build-test
     runs-on: ubuntu-latest
     env:
       ECS_CLUSTER_NAME:  ${{ secrets.ECS_CLUSTER_NAME }}
@@ -124,8 +112,6 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         with:
           mask-password: true
-
-        
 
       - name:  Setup Node.js for Frontend
         uses: actions/setup-node@v4
@@ -151,7 +137,6 @@ jobs:
             ACCOUNT_ID=${{ secrets.ACCOUNT_ID }} \
             REGION=${{ secrets.REGION }}
 
-
       - name: 🚀 Update ECS Service
         run: |
           aws ecs update-service \
@@ -159,5 +144,3 @@ jobs:
           --service $ECS_SERVICE_NAME \
           --force-new-deployment \
           --region $REGION
-        
-  
