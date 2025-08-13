@@ -1,6 +1,5 @@
 
 name: CI/CD Pipeline - Frontend & Infra
-
 on:
   pull_request:
     branches:
@@ -20,14 +19,15 @@ on:
 
 permissions:
   id-token: write
-  contents: read
-    
+  contents: read  
 env:
   NODE_VERSION: '24.3.0'
   APP_NAME: evaluacion
   DEPLOY_ENV: prod
   AWS_REGION: us-east-2
 
+
+#jobs
 jobs:
   ci-build-test:
     name: Build & Test
@@ -62,7 +62,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Nueva versión: $VERSION"
-        
+        #atlantis just working in main
   atlantis:
     name: Atlantis
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
           else
             echo "Comando de Atlantis no reconocido. Por favor usa 'atlantis plan' o 'atlantis apply'."
           fi
-
+#deploy the app just working in main
   cd-deploy-app:
     name: Deploy Application
     needs: ci-build-test
