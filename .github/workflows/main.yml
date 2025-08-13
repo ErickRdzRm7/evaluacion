@@ -105,8 +105,6 @@ jobs:
 
           TF_VAR_environment: dev
 
-          TF_VAR_environment: dev
-
   cd-deploy-app:
     name: Deploy Application
     needs: cd-deploy-infra
