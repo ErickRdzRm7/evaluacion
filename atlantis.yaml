@@ -6,4 +6,6 @@ projects:
     autoplan:
       enabled: true
       when_modified:
-        - "**/*"
+        - "*.tf"
+        - "*.tfvars"
+        - "*.tfvars.json"
