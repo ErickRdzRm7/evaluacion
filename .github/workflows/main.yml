@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
+  push:
+  branches: [development, staging]  
   issue_comment:
     types: [created]
   workflow_dispatch:
