@@ -1,5 +1,5 @@
-include .env
-export $(shell sed 's/=.*//' .env)
+#include .env
+#export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile

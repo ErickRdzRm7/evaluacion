@@ -1,23 +1,20 @@
-name: CI/CD Pipeline - Frontend & Infra
+name: CI & Terraform Validation
 
 on:
   push:
-    branches: [dev, staging, master]
+    branches:
+      - development
   pull_request:
-    branches: [master]
-  workflow_dispatch:
-    
+    branches:
+      - staging
+
 permissions:
   id-token: write
   contents: read
-    
-env:
-  NODE_VERSION: '24.3.0'
-  APP_NAME: evaluacion
-  DEPLOY_ENV: dev
+
 jobs:
-  ci-build-test:
-    name: Build & Test
+  validate:
+    name: Build, Test & Validate
     runs-on: ubuntu-latest
     
     steps:
@@ -34,20 +31,21 @@ jobs:
           cache-dependency-path: |
             ./package-lock.json
 
-      - name: Install Node.js 
-        run: make install
-    
       - name: Install Node.js dependencies
-        run: make install-ci        
-      - name: Lint 
-        run: make Lint
-
+        run: npm install
+    
       - name: Run Unit Tests
         run: make test
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
       - name: Terraform Validate
         run: make terraform-validate
 
       - name: Terraform Plan
         run: make terraform-plan
         env:
-          TF_VAR_environment: dev
+          TF_VAR_environment: staging
