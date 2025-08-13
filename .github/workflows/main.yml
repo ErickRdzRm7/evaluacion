@@ -64,102 +64,80 @@ jobs:
           echo "📦 Nueva versión: $VERSION"
         #atlantis just working in main
   atlantis:
-    name: Atlantis
-    runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'pull_request') ||  (github.ref == 'refs/heads/main' && github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
-    env:
-      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
-      ATLANTIS_GH_USER: ErickRdzRm7
-      TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.REGION }}
+  name: Atlantis Plan & Apply + Deploy
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/main' && (github.event_name == 'pull_request' || github.event_name == 'issue_comment')
+  env:
+    ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+    ATLANTIS_GH_USER: ErickRdzRm7
+    TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_REGION: ${{ secrets.REGION }}
+    ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+    ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
+    ECR_REPO: ${{ secrets.ECR_REPO }}
+    ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+    NODE_VERSION: '24.3.0'
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.7.5
-          
-      - name: Run Atlantis commands
-        run: |
-          if [[ "${{ github.event.comment.body }}" =~ "atlantis plan" ]]; then
-            docker run --rm \
-              -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
-              -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-              -e TF_VAR_access_key=$TF_VAR_access_key \
-              -e TF_VAR_secret_key=$TF_VAR_secret_key \
-              -e AWS_REGION=$AWS_REGION \
-              -v $(pwd):/repos \
-              ghcr.io/runatlantis/atlantis:latest \
-              plan
-          elif [[ "${{ github.event.comment.body }}" =~ "atlantis apply" ]]; then
-            docker run --rm \
-              -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
-              -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-              -e TF_VAR_access_key=$TF_VAR_access_key \
-              -e TF_VAR_secret_key=$TF_VAR_secret_key \
-              -e AWS_REGION=$AWS_REGION \
-              -v $(pwd):/repos \
-              ghcr.io/runatlantis/atlantis:latest \
-              apply
-          else
-            echo "Comando de Atlantis no reconocido. Por favor usa 'atlantis plan' o 'atlantis apply'."
-          fi
-#deploy the app just working in main
-  cd-deploy-app:
-    name: Deploy Application
-    needs: ci-build-test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    env:
-      ECS_CLUSTER_NAME:  ${{ secrets.ECS_CLUSTER_NAME }}
-      ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
-    steps:
-      - name: 📦 Checkout code
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name:  Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.REGION }}
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.7.5
 
-      - name:  Authenticate to ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          mask-password: true
+    - name: Atlantis Plan
+      if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis plan'))
+      run: |
+        docker run --rm \
+          -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+          -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+          -e TF_VAR_access_key=$TF_VAR_access_key \
+          -e TF_VAR_secret_key=$TF_VAR_secret_key \
+          -e AWS_REGION=$AWS_REGION \
+          -v $(pwd):/repos \
+          ghcr.io/runatlantis/atlantis:latest plan
 
-      - name:  Setup Node.js for Frontend
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24.3.0'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+    - name: Atlantis Apply + Deploy
+      if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis apply')
+      run: |
+        set -e
+        # Apply Terraform
+        docker run --rm \
+          -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+          -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+          -e TF_VAR_access_key=$TF_VAR_access_key \
+          -e TF_VAR_secret_key=$TF_VAR_secret_key \
+          -e AWS_REGION=$AWS_REGION \
+          -v $(pwd):/repos \
+          ghcr.io/runatlantis/atlantis:latest apply
 
-      - name: Install Frontend dependencies
-        run: npm install
+        # Configurar AWS
+        aws-actions/configure-aws-credentials@v4 \
+          role-to-assume=${{ secrets.AWS_ROLE_TO_ASSUME }} \
+          aws-region=$AWS_REGION
 
-      - name: Set variables
-        run: |
-         echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
-      - name: Set variables
-        run: |
-          echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
-          echo "REGION=us-east-2" >> $GITHUB_ENV
-            make docker-build-push-frontend \
-            IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
-            ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
-            ECR_REPO=${{ secrets.ECR_REPO }} \
-            ACCOUNT_ID=${{ secrets.ACCOUNT_ID }} \
-            REGION=${{ secrets.REGION }}
+        # Autenticación ECR
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-      - name: 🚀 Update ECS Service
-        run: |
-          aws ecs update-service \
+        # Build & Push Docker
+        IMAGE_TAG_BRANCH=${GITHUB_REF_NAME#refs/heads/}
+        IMAGE_TAG_SHA=${GITHUB_SHA::8}
+        IMAGE_TAG_LATEST=latest
+
+        docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST .
+        docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
+        docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+
+        # Update ECS Service
+        aws ecs update-service \
           --cluster $ECS_CLUSTER_NAME \
           --service $ECS_SERVICE_NAME \
           --force-new-deployment \
-          --region $REGION
+          --region $AWS_REGION
