@@ -1,8 +1,6 @@
 name: CI/CD Pipeline - Frontend & Infra
 
 on:
-  push:
-    branches: [dev, staging, main]
   pull_request:
     types: [opened, reopened, synchronize]
   issue_comment:

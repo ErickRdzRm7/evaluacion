@@ -1,0 +1,11 @@
+version: 3
+projects:
+- name: development
+  dir: infra/terraform-dev
+  workspace: default
+- name: staging
+  dir: infra/terraform-staging
+  workspace: default
+- name: production
+  dir: infra/terraform-prod
+  workspace: default
