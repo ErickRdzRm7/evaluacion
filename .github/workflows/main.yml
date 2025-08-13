@@ -5,6 +5,8 @@ on:
     branches: [dev, staging, main]
   pull_request:
     types: [opened, reopened, synchronize]
+     issue_comment:
+     types: [created]
   workflow_dispatch:
     
 permissions:
@@ -57,8 +59,7 @@ jobs:
   atlantis:
     name: Atlantis
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
     env:
       ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
       ATLANTIS_GH_USER: ErickRdzRm7
