@@ -3,7 +3,6 @@ name: CI/CD Pipeline - Frontend & Infra
 on:
   push:
     branches: [dev, staging, master]
-    branches: [dev, staging, main]
   pull_request:
     branches: [main]
   workflow_dispatch:
