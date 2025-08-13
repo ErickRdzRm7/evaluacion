@@ -2,14 +2,21 @@ name: CI/CD Pipeline - Frontend & Infra
 
 on:
   pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize]
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
   push:
-  branches: [development, staging]  
+    branches:
+      - development
+      - staging
   issue_comment:
-    types: [created]
+    types:
+      - created
   workflow_dispatch:
-    
+
 permissions:
   id-token: write
   contents: read
@@ -39,9 +46,6 @@ jobs:
           cache-dependency-path: |
             ./package-lock.json
 
-      - name: Install Node.js 
-        run: make install
-    
       - name: Install Node.js dependencies
         run: make install-ci        
       - name: Lint 
@@ -140,10 +144,10 @@ jobs:
       - name: Set variables
         run: |
          echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
-         echo "REGION=us-east-2" >> $GITHUB_ENV
-
-      - name: 🐳 Build & Push Frontend Docker Image
+      - name: Set variables
         run: |
+          echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
+          echo "REGION=us-east-2" >> $GITHUB_ENV
             make docker-build-push-frontend \
             IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
             ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
