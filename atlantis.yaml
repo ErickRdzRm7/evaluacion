@@ -4,5 +4,6 @@ projects:
     dir: infra/terraform-erick
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
       enabled: true
+      when_modified:
+        - "**/*"
