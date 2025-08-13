@@ -96,7 +96,7 @@ jobs:
       ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
       ECR_REPO: ${{ secrets.ECR_REPO }}
       ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
-      NODE_VERSION: ${{ env.NODE_VERSION }}
+      NODE_VERSION: ${{ secrets.NODE_VERSION }}
     steps:
       - uses: actions/checkout@v4
       - name: Configure AWS Credentials
@@ -123,7 +123,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          NODE_VERSION
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Build & Push Docker Image
