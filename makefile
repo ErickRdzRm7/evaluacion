@@ -1,5 +1,5 @@
-#include .env
-#export $(shell sed 's/=.*//' .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
 ENV ?= dev
 IMAGE_NAME ?= dockerfile
@@ -7,7 +7,8 @@ SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_TAG ?= $(if $(VERSION),$(VERSION),$(BRANCH_NAME)-$(COMMIT_HASH))
+IMAGE_TAG := $(BRANCH_NAME)-$(COMMIT_HASH)
+
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
@@ -75,38 +76,3 @@ terraform-plan:
 	terraform plan \
 		-var-file="terraform.tfvars" \
 		-out=tfplan.out
-
-
-terraform-apply: check-terraform verify-dirs check-env
-	@echo "Applying Terraform..."
-	cd $(INFRA_DIR) && \
-		terraform apply \
-		-var-file="terraform.tfvars" \
-		-auto-approve
-
-# --- Docker -------
-# Build and Push Docker Image frontend
-docker-build-push-frontend: check-env
-	@echo "Logging in to ECR..."
-	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
-	
-	@echo "Building Docker image with tag $(IMAGE_TAG)..."
-	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
-	
-	@echo "Tagging image for ECR..."
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
-	
-ifeq ($(BRANCH_NAME),main)
-	@echo "Tagging and pushing with 'latest' tag for main branch."
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):latest
-	docker push $(ECR_REGISTRY):latest
-endif
-
-	@echo "Pushing image to ECR with tag $(IMAGE_TAG)..."
-	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
-	
-	@echo "Done: pushed images."
-
-update-ecs-service:
-		@echo "Updating ECS service..."
-		aws ecs update-service --cluster $(ECS_CLUSTER_NAME) --service $(ECS_SERVICE_NAME) --force-new-deployment --region $(REGION)
