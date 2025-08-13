@@ -21,12 +21,6 @@ resource "aws_ecs_task_definition" "frontend" {
           protocol      = "tcp"
         }
       ]
-      environment = [
-        {
-          name  = "NODE_ENV"
-          value = "production"
-        }
-      ]
     }
   ])
 }
