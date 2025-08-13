@@ -1,61 +1,128 @@
-name: CI & Terraform Validation
+name: CI/CD Pipeline - Frontend & Terraform
 
 on:
-  push:
-    branches:
-      - development
-      - staging
   pull_request:
-    branches:
-      - development
-      - staging
+    branches: [main, development, staging]
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main, development, staging]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
+
+env:
+  NODE_VERSION: '24.3.0'
+  APP_NAME: evaluacion
+  AWS_REGION: us-east-2
+
 jobs:
+  # Job para validar código y Terraform
   validate:
     name: Build, Test & Validate
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
         with:
-          node-version: v24.3.0
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: |
-            ./package-lock.json
-
-      - name: Install Node.js dependencies
-        run: npm install
-    
-      - name: Run Unit Tests
-        run: make test
-
-      - name: Setup AWS CLI
-        uses: aws-actions/configure-aws-credentials@v3 
+          cache-dependency-path: ./package-lock.json
+      - run: npm install
+      - run: make test
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5    
-
-      - name: Terraform init
-        run: make terraform-init
-
-      - name: Terraform Validate
-        run: make terraform-validate
-
-      - name: Terraform Plan
-        run: make terraform-plan
+          terraform_version: 1.7.5
+      - run: make terraform-init
+      - run: make terraform-validate
+      - run: make terraform-plan
         env:
           TF_VAR_environment: ${{ github.ref_name }}
+
+  # Solo para main: Atlantis
+  atlantis:
+    name: Atlantis
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
+    env:
+      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+      ATLANTIS_GH_USER: ErickRdzRm7
+      TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ env.AWS_REGION }}
+      ATLANTIS_ENV: "prod"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+      - run: |
+          if [[ "${{ github.event.comment.body }}" =~ "atlantis plan" ]]; then
+            docker run --rm \
+              -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+              -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+              -e TF_VAR_access_key=$TF_VAR_access_key \
+              -e TF_VAR_secret_key=$TF_VAR_secret_key \
+              -e AWS_REGION=$AWS_REGION \
+              -v $(pwd):/repos \
+              ghcr.io/runatlantis/atlantis:latest plan
+          elif [[ "${{ github.event.comment.body }}" =~ "atlantis apply" ]]; then
+            docker run --rm \
+              -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+              -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+              -e TF_VAR_access_key=$TF_VAR_access_key \
+              -e TF_VAR_secret_key=$TF_VAR_secret_key \
+              -e AWS_REGION=$AWS_REGION \
+              -v $(pwd):/repos \
+              ghcr.io/runatlantis/atlantis:latest apply
+          else
+            echo "Comando de Atlantis no reconocido."
+          fi
+
+  # Solo para main: Despliegue ECS
+  cd-deploy-app:
+    name: Deploy Application
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+      ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.REGION }}
+      - uses: aws-actions/amazon-ecr-login@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm install
+      - run: |
+          echo "ECR_REGISTRY=$(aws ecr describe-repositories --repository-names app-frontend --query "repositories[0].repositoryUri" | cut -d/ -f1)" >> $GITHUB_ENV
+          echo "REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
+      - run: |
+          make docker-build-push-frontend \
+          IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
+          ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
+          ECR_REPO=${{ secrets.ECR_REPO }} \
+          ACCOUNT_ID=${{ secrets.ACCOUNT_ID }} \
+          REGION=${{ secrets.REGION }}
+      - run: |
+          aws ecs update-service \
+          --cluster $ECS_CLUSTER_NAME \
+          --service $ECS_SERVICE_NAME \
+          --force-new-deployment \
+          --region $REGION
