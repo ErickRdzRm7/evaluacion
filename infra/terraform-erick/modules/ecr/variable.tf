@@ -3,7 +3,3 @@ variable app_name {
   default     = " EduAI"
   description = "The name of the application used in resource names."
 }
-variable "environment" {
-  description = "Deployment environment"
-  type        = string
-}
