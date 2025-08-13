@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - development
+      - staging
   pull_request:
     branches:
+      - development
       - staging
 
 permissions:
@@ -48,4 +50,4 @@ jobs:
       - name: Terraform Plan
         run: make terraform-plan
         env:
-          TF_VAR_environment: staging
+          TF_VAR_environment: ${{ github.ref_name }}
