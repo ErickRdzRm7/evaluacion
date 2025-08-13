@@ -2,8 +2,9 @@ name: CI/CD Pipeline - Frontend & Infra
 
 on:
   pull_request:
+    branches: [main]
     types: [opened, reopened, synchronize]
-  issue_comment:
+    issue_comment:
     types: [created]
   workflow_dispatch:
     
