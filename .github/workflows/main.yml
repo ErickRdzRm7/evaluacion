@@ -9,11 +9,9 @@ on:
     branches:
       - development
       - staging
-
 permissions:
   id-token: write
   contents: read
-
 jobs:
   validate:
     name: Build, Test & Validate
