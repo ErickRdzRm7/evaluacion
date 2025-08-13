@@ -62,6 +62,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Nueva versión: $VERSION"
+
+
         #atlantis just working in main
   atlantis:
     name: Atlantis Plan & Apply + Deploy
@@ -100,44 +102,89 @@ jobs:
             -v $(pwd):/repos \
             ghcr.io/runatlantis/atlantis:latest plan
 
-      - name: Atlantis Apply + Deploy
-        if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis apply')
-        run: |
-          set -e
-          # Apply Terraform
-          docker run --rm \
-            -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
-            -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-            -e TF_VAR_access_key=$TF_VAR_access_key \
-            -e TF_VAR_secret_key=$TF_VAR_secret_key \
-            -e AWS_REGION=$AWS_REGION \
-            -v $(pwd):/repos \
-            ghcr.io/runatlantis/atlantis:latest apply
+     atlantis:
+  name: Atlantis Plan & Apply + Deploy
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/main' && 
+      (github.event_name == 'pull_request' || 
+       (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis')))
+  env:
+    ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+    ATLANTIS_GH_USER: ErickRdzRm7
+    TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_REGION: ${{ secrets.REGION }}
+    ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+    ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
+    ECR_REPO: ${{ secrets.ECR_REPO }}
+    ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+    NODE_VERSION: '24.3.0'
 
-          # Configurar AWS
-          aws-actions/configure-aws-credentials@v4 \
-            role-to-assume=${{ secrets.AWS_ROLE_TO_ASSUME }} \
-            aws-region=$AWS_REGION
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-          # Autenticación ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+    - name: Setup AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ env.AWS_REGION }}
 
-          # Build & Push Docker
-          IMAGE_TAG_BRANCH=${GITHUB_REF_NAME#refs/heads/}
-          IMAGE_TAG_SHA=${GITHUB_SHA::8}
-          IMAGE_TAG_LATEST=latest
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.7.5
 
-          docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST .
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+    - name: Atlantis Plan
+      if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis plan'))
+      run: |
+        docker run --rm \
+          -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+          -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+          -e TF_VAR_access_key=$TF_VAR_access_key \
+          -e TF_VAR_secret_key=$TF_VAR_secret_key \
+          -e AWS_REGION=$AWS_REGION \
+          -v $(pwd):/repos \
+          ghcr.io/runatlantis/atlantis:latest plan
 
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+    - name: Atlantis Apply
+      if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis apply')
+      run: |
+        docker run --rm \
+          -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+          -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+          -e TF_VAR_access_key=$TF_VAR_access_key \
+          -e TF_VAR_secret_key=$TF_VAR_secret_key \
+          -e AWS_REGION=$AWS_REGION \
+          -v $(pwd):/repos \
+          ghcr.io/runatlantis/atlantis:latest apply
 
-          # Update ECS Service
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER_NAME \
-            --service $ECS_SERVICE_NAME \
-            --force-new-deployment \
-            --region $AWS_REGION
+        # Autenticación ECR
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+        # Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+        # Build & Push Docker Image
+        IMAGE_TAG_BRANCH=${GITHUB_REF_NAME#refs/heads/}
+        IMAGE_TAG_SHA=${GITHUB_SHA::8}
+        IMAGE_TAG_LATEST=latest
+
+        docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST .
+        docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
+        docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
+        docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+
+        # Update ECS Service
+        aws ecs update-service \
+          --cluster $ECS_CLUSTER_NAME \
+          --service $ECS_SERVICE_NAME \
+          --force-new-deployment \
+          --region $AWS_REGION
