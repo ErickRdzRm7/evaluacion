@@ -1,8 +1,6 @@
 name: CI/CD Pipeline - Frontend & Infra
 
 on:
-  push:
-    branches: [dev, staging, master]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -78,18 +76,6 @@ jobs:
       - name: Terraform Init
         run: make terraform-init
 
-      - name: Select Terraform workspace
-        run: |
-            if [[ "${GITHUB_REF_NAME}" == "dev" ]]; then
-              terraform workspace select "dev" || terraform workspace new "dev"
-            elif [[ "${GITHUB_REF_NAME}" == "staging" ]]; then
-              terraform workspace select "staging" || terraform workspace new "staging"
-            elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
-              terraform workspace select "prod" || terraform workspace new "prod"
-            fi
-        working-directory: ./infra
-    
-
       - name: Terraform Validate
         run: make terraform-validate
 
@@ -99,12 +85,50 @@ jobs:
           TF_VAR_environment: dev
 
 
-      - name: Terraform Apply
-        run:  make terraform-apply
-        env:
+  atlantis:
+    name: Atlantis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
+    env:
+      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+      ATLANTIS_GH_USER: ErickRdzRm7
+      TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.REGION }}
+      ATLANTIS_ENV: ${{ (github.base_ref == 'refs/heads/main' && 'prod') || (github.base_ref == 'refs/heads/staging' && 'staging') || 'dev' }}
 
-          TF_VAR_environment: dev
-
+      steps:
+        - name: Run Atlantis
+          run: |
+            if [[ "${{ github.event.comment.body }}" =~ "atlantis plan" ]]; then
+              docker run --rm \
+                -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+                -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+                -e TF_VAR_access_key=$AWS_ACCESS_KEY_ID \
+                -e TF_VAR_secret_key=$AWS_SECRET_ACCESS_KEY \
+                -e AWS_REGION=$AWS_REGION \
+                -v $(pwd):/repos \
+                ghcr.io/runatlantis/atlantis:latest \
+                server --gh-user=$ATLANTIS_GH_USER \
+                --gh-token=$ATLANTIS_GH_TOKEN \
+                --dir /repos \
+                --var-file=${{ env.ATLANTIS_ENV }}.tfvars
+            elif [[ "${{ github.event.comment.body }}" =~ "atlantis apply" ]]; then
+              docker run --rm \
+                -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
+                -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
+                -e TF_VAR_access_key=$TF_VAR_access_key \
+                -e TF_VAR_secret_key=$TF_VAR_secret_key \
+                -e AWS_REGION=$AWS_REGION \
+                -v $(pwd):/repos \
+                ghcr.io/runatlantis/atlantis:latest \
+                server --gh-user=$ATLANTIS_GH_USER \
+                --gh-token=$ATLANTIS_GH_TOKEN \
+                --dir /repos \
+                --var-file=${{ env.ATLANTIS_ENV }}.tfvars
+            else
+              echo "Comando de Atlantis no reconocido. Por favor usa 'atlantis plan' o 'atlantis apply'."
+            fi
   cd-deploy-app:
     name: Deploy Application
     needs: cd-deploy-infra
