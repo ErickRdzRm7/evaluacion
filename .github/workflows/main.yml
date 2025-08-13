@@ -63,7 +63,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Nueva versión: $VERSION"
         #atlantis just working in main
-jobs:
   atlantis:
     name: Atlantis Plan & Apply + Deploy
     runs-on: ubuntu-latest
