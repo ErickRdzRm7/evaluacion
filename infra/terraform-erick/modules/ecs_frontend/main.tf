@@ -4,7 +4,7 @@ resource "aws_ecs_task_definition" "frontend" {
   family                   = "${var.app_name}-frontend"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "1024"   # 0.25 vCPU 
+  cpu                      = "1024"   # 0.25 vCPU
   memory                   = "2048"   # 0.5 GB RAM
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
@@ -23,8 +23,8 @@ resource "aws_ecs_task_definition" "frontend" {
       ]
       environment = [
         {
-          name  = "NODE"
-          value = "prod"
+          name  = "NODE_ENV"
+          value = "dev"
         }
       ]
     }

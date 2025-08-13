@@ -1,6 +1,5 @@
 # frontend/Dockerfile.dev
-FROM node:18
-
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -18,7 +17,7 @@ RUN npm install
 COPY . .
 
 # Variables de entorno
-ENV NODE_ENV=prod
+ENV NODE_ENV=development
 
 EXPOSE 80 
 
