@@ -5,7 +5,7 @@ on:
     branches: [main, development, staging]
     types: [opened, reopened, synchronize]
   push:
-    branches: [main, development, staging]
+    branches: [development, staging, main]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -20,9 +20,9 @@ env:
   AWS_REGION: us-east-2
 
 jobs:
-  # Job para validar código y Terraform
+  # Validación de código y Terraform (todas las ramas)
   validate:
-    name: Build, Test & Validate
+    name: Build, Test & Terraform Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: ./package-lock.json
       - run: npm install
       - run: make test
@@ -48,11 +48,13 @@ jobs:
         env:
           TF_VAR_environment: ${{ github.ref_name }}
 
-  # Solo para main: Atlantis
+  # Atlantis (solo main)
   atlantis:
     name: Atlantis
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
+    if: github.ref == 'refs/heads/main' || 
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis'))
+    needs: validate
     env:
       ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
       ATLANTIS_GH_USER: ErickRdzRm7
@@ -88,10 +90,10 @@ jobs:
             echo "Comando de Atlantis no reconocido."
           fi
 
-  # Solo para main: Despliegue ECS
+  # Despliegue ECS (solo main)
   cd-deploy-app:
     name: Deploy Application
-    needs: validate
+    needs: [validate, atlantis]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     env:
