@@ -54,7 +54,7 @@ jobs:
           npm version patch --no-git-tag-version
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo " Nueva versión: $VERSION"
+          echo "📦 Nueva versión: $VERSION"
         
   atlantis:
     name: Atlantis
@@ -66,7 +66,7 @@ jobs:
       TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.REGION }}
-      ATLANTIS_ENV: prod
+      ATLANTIS_ENV: "prod"
       
     steps:
       - name: Checkout code
@@ -77,9 +77,8 @@ jobs:
         with:
           terraform_version: 1.7.5
           
-      - name: Run Atlantis
+      - name: Run Atlantis commands
         run: |
-          # Se usan bloques if/elif para ejecutar el comando correcto
           if [[ "${{ github.event.comment.body }}" =~ "atlantis plan" ]]; then
             docker run --rm \
               -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
@@ -89,10 +88,7 @@ jobs:
               -e AWS_REGION=$AWS_REGION \
               -v $(pwd):/repos \
               ghcr.io/runatlantis/atlantis:latest \
-              server --gh-user=$ATLANTIS_GH_USER \
-              --gh-token=$ATLANTIS_GH_TOKEN \
-              --dir /repos \
-              --var-file=${{ env.ATLANTIS_ENV }}.tfvars
+              plan
           elif [[ "${{ github.event.comment.body }}" =~ "atlantis apply" ]]; then
             docker run --rm \
               -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
@@ -102,10 +98,7 @@ jobs:
               -e AWS_REGION=$AWS_REGION \
               -v $(pwd):/repos \
               ghcr.io/runatlantis/atlantis:latest \
-              server --gh-user=$ATLANTIS_GH_USER \
-              --gh-token=$ATLANTIS_GH_TOKEN \
-              --dir /repos \
-              --var-file=${{ env.ATLANTIS_ENV }}.tfvars
+              apply
           else
             echo "Comando de Atlantis no reconocido. Por favor usa 'atlantis plan' o 'atlantis apply'."
           fi
@@ -150,7 +143,7 @@ jobs:
 
       - name: 🐳 Build & Push Frontend Docker Image
         run: |
-            make docker-build-push-frontend VERSION=${{ needs.ci-build-test.outputs.version }} \
+            make docker-build-push-frontend \
             IMAGE_TAG=${{ github.ref_name }}-${{ github.sha }} \
             ECR_REGISTRY=${{ secrets.ECR_REGISTRY }} \
             ECR_REPO=${{ secrets.ECR_REPO }} \
