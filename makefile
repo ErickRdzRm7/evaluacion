@@ -1,14 +1,13 @@
-include .env
-export $(shell sed 's/=.*//' .env)
+#include .env
+#export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
-ENV ?= dev
+ENV ?= prod
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_TAG := $(BRANCH_NAME)-$(COMMIT_HASH)
-
+IMAGE_TAG ?= $(if $(VERSION),$(VERSION),$(BRANCH_NAME)-$(COMMIT_HASH))
 ECR_REPO=app-frontend
 ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 # --- Validation helpers ---
@@ -88,28 +87,27 @@ terraform-apply: check-terraform verify-dirs check-env
 # --- Docker -------
 
 # Build and Push Docker Image frontend
-
-docker-build-push-frontend:
-	@echo "Building Docker image with tags $(IMAGE_TAG) and latest..."
-	# Construye la imagen con la etiqueta dinámica y la etiqueta 'latest' en un solo comando
-	docker build -t $(ECR_REPO):$(IMAGE_TAG) -t $(ECR_REPO):latest .
-	
-	@echo "Tagging image for ECR..."
-	# Etiqueta la imagen dinámica para ECR
-	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
-	# Etiqueta la imagen 'latest' para ECR
-	docker tag $(ECR_REPO):latest $(ECR_REGISTRY):latest
-	
+docker-build-push-frontend: check-env
 	@echo "Logging in to ECR..."
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
-	
-	@echo "Pushing images to ECR..."
-	# Empuja la imagen con la etiqueta dinámica
-	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
-	# Empuja la imagen con la etiqueta 'latest'
-	docker push $(ECR_REGISTRY):latest
-	
-	@echo "Done: $(ECR_REGISTRY):$(IMAGE_TAG) and $(ECR_REGISTRY):latest"
+	@echo "Building multi-arch Docker image with tag $(IMAGE_TAG) and latest (if main)..."
+	docker buildx create --use || true
+
+	# Build and push branch+commit tag
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-t $(ECR_REGISTRY):$(IMAGE_TAG) \
+		--push \
+		.
+
+ifeq ($(BRANCH_NAME),main)
+	# Build and push latest tag (solo main)
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-t $(ECR_REGISTRY):latest \
+		--push \
+		.
+endif
+
+	@echo "Done: pushed images."
 
 update-ecs-service:
 		@echo "Updating ECS service..."
