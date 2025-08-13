@@ -1,7 +1,7 @@
-#include .env
-#export $(shell sed 's/=.*//' .env)
+include .env
+export $(shell sed 's/=.*//' .env)
 # === Makefile for Node.js + Terraform + Docker ===
-ENV ?= prod
+ENV ?= dev
 IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
@@ -85,28 +85,26 @@ terraform-apply: check-terraform verify-dirs check-env
 		-auto-approve
 
 # --- Docker -------
-
 # Build and Push Docker Image frontend
 docker-build-push-frontend: check-env
 	@echo "Logging in to ECR..."
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
-	@echo "Building multi-arch Docker image with tag $(IMAGE_TAG) and latest (if main)..."
-	docker buildx create --use || true
-
-	# Build and push branch+commit tag
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-t $(ECR_REGISTRY):$(IMAGE_TAG) \
-		--push \
-		.
-
+	
+	@echo "Building Docker image with tag $(IMAGE_TAG)..."
+	docker build -t $(ECR_REPO):$(IMAGE_TAG) .
+	
+	@echo "Tagging image for ECR..."
+	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):$(IMAGE_TAG)
+	
 ifeq ($(BRANCH_NAME),main)
-	# Build and push latest tag (solo main)
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-t $(ECR_REGISTRY):latest \
-		--push \
-		.
+	@echo "Tagging and pushing with 'latest' tag for main branch."
+	docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY):latest
+	docker push $(ECR_REGISTRY):latest
 endif
 
+	@echo "Pushing image to ECR with tag $(IMAGE_TAG)..."
+	docker push $(ECR_REGISTRY):$(IMAGE_TAG)
+	
 	@echo "Done: pushed images."
 
 update-ecs-service:
