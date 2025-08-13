@@ -54,7 +54,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Nueva versión: $VERSION"
-
+  #just working in main
   atlantis-plan:
     name: Atlantis Plan
     runs-on: ubuntu-latest
@@ -81,6 +81,7 @@ jobs:
             -v $(pwd):/repos \
             ghcr.io/runatlantis/atlantis:latest plan
 
+#just working in main
   atlantis-apply-deploy:
     name: Atlantis Apply + Deploy
     runs-on: ubuntu-latest
