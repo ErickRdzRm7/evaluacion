@@ -6,7 +6,6 @@ terraform {
 
   }
 }
-
 module "network" {
   source             = "./modules/network"
   app_name           = var.app_name
@@ -14,8 +13,6 @@ module "network" {
   app_subnet_cidr    = var.app_subnet_cidr
   availability_zones = var.availability_zones
 }
-
-
 module "ecr" {
   source      = "./modules/ecr"
   app_name    = var.app_name
@@ -24,8 +21,6 @@ module "ecr" {
 resource "aws_ecs_cluster" "main" {
   name = var.cluster_name
 }
-
-
 module "ecs_frontend" {
   region             = "us-east-2"
   source             = "./modules/ecs_frontend"

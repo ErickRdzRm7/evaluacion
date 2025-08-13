@@ -27,8 +27,6 @@ resource "aws_internet_gateway" "igw" {
     Name = "${var.app_name}-igw"
   }
 }
-
-
 # Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id

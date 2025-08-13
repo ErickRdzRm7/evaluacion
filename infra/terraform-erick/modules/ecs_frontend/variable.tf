@@ -10,6 +10,7 @@ variable "desired_count" {
 variable "region" {}
 
 variable "vpc_id" {
+  description= "vpc from the project"
   type = string
 }
 

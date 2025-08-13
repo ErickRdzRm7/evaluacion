@@ -1,5 +1,3 @@
-# main.tf
-
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "${var.app_name}-frontend"
   network_mode             = "awsvpc"
