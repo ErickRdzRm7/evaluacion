@@ -34,7 +34,7 @@ variable "availability_zones" {
 
 variable "cluster_name" {
   type    = string
-  default = "app-cluster"
+  default = "app-evaluacion-cluster"
 }
 
 variable "ecs_sg_frontend" {
