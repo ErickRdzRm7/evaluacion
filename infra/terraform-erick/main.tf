@@ -19,7 +19,6 @@ module "network" {
 module "ecr" {
   source      = "./modules/ecr"
   app_name    = var.app_name
-  environment = var.environment
 }
 
 resource "aws_ecs_cluster" "main" {

@@ -4,11 +4,6 @@ provider "aws" {
 
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "mi-terraform-state-erick"
-
-  tags = {
-    Name        = "Terraform State Bucket"
-    Environment = "dev"
-  }
 }
 
 resource "aws_s3_bucket_versioning" "enabled" {
@@ -46,10 +41,5 @@ resource "aws_dynamodb_table" "terraform_locks" {
   attribute {
     name = "LockID"
     type = "S"
-  }
-
-  tags = {
-    Name        = "Terraform Lock Table"
-    Environment = "dev"
   }
 }

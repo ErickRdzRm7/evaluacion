@@ -1,0 +1,5 @@
+version: 3
+projects:
+- name: production
+  dir: infra/terraform-prod
+  workspace: default
