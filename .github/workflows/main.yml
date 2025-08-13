@@ -39,10 +39,16 @@ jobs:
       - name: Run Unit Tests
         run: make test
 
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3 
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5
+          terraform_version: 1.7.5    
 
       - name: Terraform init
         run: make terraform-init
