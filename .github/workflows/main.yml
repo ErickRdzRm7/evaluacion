@@ -5,8 +5,8 @@ on:
     branches: [dev, staging, main]
   pull_request:
     types: [opened, reopened, synchronize]
-     issue_comment:
-     types: [created]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     
 permissions:
@@ -81,9 +81,9 @@ jobs:
           docker run --rm \
             -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
             -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-            -e TF_VAR_access_key=$AWS_ACCESS_KEY_ID \
-            -e TF_VAR_secret_key=$AWS_SECRET_ACCESS_KEY \
-            -e AWS_REGION=$REGION \
+            -e TF_VAR_access_key=$TF_VAR_access_key \
+            -e TF_VAR_secret_key=$TF_VAR_secret_key \
+            -e AWS_REGION=$AWS_REGION \
             -v $(pwd):/repos \
             ghcr.io/runatlantis/atlantis:latest \
             server --gh-user=$ATLANTIS_GH_USER \
