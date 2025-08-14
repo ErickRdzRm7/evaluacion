@@ -3,9 +3,19 @@ projects:
   - name: terraform-erick
     dir: infra/terraform-erick
     workspace: default
+    workflow: default
     autoplan:
       enabled: true
       when_modified:
         - "*.tf"
         - "*.tfvars"
         - "*.tfvars.json"
+workflows:
+  default:
+    plan:
+      steps:
+        - init
+        - plan
+    apply:
+      steps:
+        - apply
