@@ -85,7 +85,7 @@ jobs:
     name: Atlantis Apply + Deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis apply')
-    needs: atlantis-plan
+    needs: atlantis-apply
     env:
       ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
       ATLANTIS_GH_USER: ErickRdzRm7
