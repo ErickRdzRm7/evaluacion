@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: v24.3.0
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ./package-lock.json
       - run: make install-ci
@@ -61,16 +61,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      - name: Run Atlantis Apply
+      - name: Install Atlantis CLI
         run: |
-          docker run --rm \
-            -e ATLANTIS_GH_TOKEN=${{ secrets.ATLANTIS_GH_TOKEN }} \
-            -e ATLANTIS_GH_USER=ErickRdzRm7 \
-            -e TF_VAR_access_key=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e TF_VAR_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_REGION=${{ secrets.REGION }} \
-            -v $(pwd):/repos \
-            ghcr.io/runatlantis/atlantis:latest apply
+          curl -sL https://github.com/runatlantis/atlantis/releases/latest/download/atlantis_linux_amd64.zip -o atlantis.zip
+          unzip atlantis.zip
+          sudo mv atlantis /usr/local/bin/
+      - name: Run Atlantis Apply
+        env:
+          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.REGION }}
+          ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
+          ATLANTIS_GH_USER: ErickRdzRm7
+        run: |
+          # Aplica Terraform usando Atlantis CLI
+          atlantis apply -d .
 
   deploy-app:
     runs-on: ubuntu-latest
