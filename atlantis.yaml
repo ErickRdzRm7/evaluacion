@@ -1,19 +1,21 @@
 version: 3
 projects:
-- dir: infra/terraform-erick
-  workflow: app-deploy
-  autoplan:
-    when_modified: ["**/*.tf*", "**/Dockerfile", "src/**/*.js"] 
-    enabled: true
-
+  - name: terraform-erick
+    dir: infra/terraform-erick
+    workspace: default
+    workflow: default
+    autoplan:
+      enabled: true
+      when_modified:
+        - "*.tf"
+        - "*.tfvars"
+        - "*.tfvars.json"
 workflows:
-  app-deploy:
+  default:
     plan:
       steps:
-      - run: ./scripts/build_and_push.sh
-      - init
-      - plan:
-          extra_args: ["-var-file=atlantis.tfvars"]
+        - init
+        - plan
     apply:
       steps:
-      - apply
+        - apply
