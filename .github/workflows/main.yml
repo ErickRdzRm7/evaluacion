@@ -6,8 +6,11 @@ on:
       - main
       - development
       - staging
-  workflow_dispatch: # Permite ejecución manual
 
+  workflow_dispatch: # Permite ejecución manual
+  
+permissions:
+  contents: write
 env:
   NODE_VERSION: '24.3.0'
   AWS_REGION: us-east-2
