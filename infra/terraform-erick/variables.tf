@@ -28,3 +28,9 @@ variable "ecs_sg_frontend" {
   description = "Security group for ECS frontend"
   default     = "ecs_sg_frontend"
 }
+
+variable "image_tag" {
+  description = "La etiqueta de la imagen de Docker que Atlantis construyó."
+  type        = string
+  default     = "latest"
+}

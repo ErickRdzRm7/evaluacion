@@ -17,3 +17,8 @@ variable "vpc_id" {
 variable "security_group_ids" {
   type = list(string)
 }
+
+variable "image_tag" {
+  description = "La etiqueta de la imagen de Docker que Atlantis construyó."
+  type        = string
+}

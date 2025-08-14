@@ -1,150 +1,43 @@
-name: CI/CD Pipeline - Frontend & Infra
+name: CI - Build & Test
+# Disparador ÚNICO: Se ejecuta solo cuando se abre o actualiza un PR hacia tus ramas principales.
 on:
   pull_request:
     branches:
       - main
-    types:
-      - opened
-      - reopened
-      - synchronize
-  push:
-    branches:
       - development
       - staging
-  issue_comment:
-    types:
-      - created
-  workflow_dispatch:
-
-permissions:
-  id-token: write
-  contents: read  
+  workflow_dispatch: # Permite ejecución manual
 
 env:
   NODE_VERSION: '24.3.0'
-  APP_NAME: evaluacion
-  DEPLOY_ENV: dev
   AWS_REGION: us-east-2
 
 jobs:
-  ci-build-test:
+  build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    permissions: # Es buena práctica mantenerlo por si necesitas acceder a AWS para algo
+      id-token: write
+      contents: read  
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # fetch-depth: 0 es necesario para que el script de Atlantis pueda obtener el hash del commit
         with:
-          fetch-depth: 0
+          fetch-depth: 0 
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: v24.3.0
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ./package-lock.json
-      - run: make install-ci
-        name: Install Node.js dependencies
-      - run: make Lint
-        name: Lint
-      - run: make test
-        name: Run Unit Tests
-      - name: Bump Version
-        if: github.ref == 'refs/heads/main'
-        run: |
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "📦 Nueva versión: $VERSION"
-  #just working in main
-  atlantis-plan:
-    name: Atlantis Plan
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis plan')))
-    env:
-      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
-      ATLANTIS_GH_USER: ErickRdzRm7
-      TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.REGION }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.7.5
-      - name: Run Atlantis Plan
-        run: |
-          docker run --rm \
-            -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
-            -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-            -e TF_VAR_access_key=$TF_VAR_access_key \
-            -e TF_VAR_secret_key=$TF_VAR_secret_key \
-            -e AWS_REGION=$AWS_REGION \
-            -v $(pwd):/repos \
-            ghcr.io/runatlantis/atlantis:latest plan
 
-#just working in main
-  atlantis-apply-deploy:
-    name: Atlantis Apply + Deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'issue_comment' && contains(github.event.comment.body, 'atlantis apply')
-    needs: atlantis-plan
-    env:
-      ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
-      ATLANTIS_GH_USER: ErickRdzRm7
-      TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.REGION }}
-      ECS_CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-      ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
-      ECR_REPO: ${{ secrets.ECR_REPO }}
-      ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
-      NODE_VERSION: ${{ secrets.NODE_VERSION }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.7.5
-      - name: Run Atlantis Apply
-        run: |
-          docker run --rm \
-            -e ATLANTIS_GH_TOKEN=$ATLANTIS_GH_TOKEN \
-            -e ATLANTIS_GH_USER=$ATLANTIS_GH_USER \
-            -e TF_VAR_access_key=$TF_VAR_access_key \
-            -e TF_VAR_secret_key=$TF_VAR_secret_key \
-            -e AWS_REGION=$AWS_REGION \
-            -v $(pwd):/repos \
-            ghcr.io/runatlantis/atlantis:latest apply
-      - name: Authenticate to ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24.3.0'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Build & Push Docker Image
-        run: |
-          IMAGE_TAG_BRANCH=${GITHUB_REF_NAME#refs/heads/}
-          IMAGE_TAG_SHA=${GITHUB_SHA::8}
-          IMAGE_TAG_LATEST=latest
+      - name: Install Node.js dependencies
+        run: make install-ci
 
-          docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST .
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
+      - name: Lint
+        run: make Lint
 
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
-
-      - name: Update ECS Service
-        run: |
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER_NAME \
-            --service $ECS_SERVICE_NAME \
-            --force-new-deployment \
-            --region $AWS_REGION
+      - name: Run Unit Tests
+        run: make test
