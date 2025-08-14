@@ -1,0 +1,21 @@
+name: Tag Release
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write   
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          # Configura git
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          
+          # Actualiza la versión y empuja el cambio y el tag
+          npm version patch -m "chore: release v%s"
+          git push --follow-tags
