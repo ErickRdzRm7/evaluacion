@@ -28,3 +28,8 @@ variable "ecs_sg_frontend" {
   description = "Security group for ECS frontend"
   default     = "ecs_sg_frontend"
 }
+
+variable "zone_id" {
+  type        = string
+  description = "ID de la zona DNS para Route53"
+}
