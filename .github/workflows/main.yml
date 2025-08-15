@@ -44,3 +44,9 @@ jobs:
 
       - name: Run Unit Tests
         run: make test
+      
+      - name: Run terraform init
+        run: make terraform-init
+
+      - name: Run terraform validate
+        run: make terraform-validate
