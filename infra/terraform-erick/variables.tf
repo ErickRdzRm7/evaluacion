@@ -33,3 +33,6 @@ variable "zone_id" {
   type        = string
   description = "ID de la zona DNS para Route53"
 }
+variable "record_name" {}
+variable "record_type" { default = "A" }
+variable "record_value" {}

@@ -40,6 +40,9 @@ module "monitoring" {
   service_name = "eduia-service"
 }
 module "route53" {
-  source   = "./modules/Route53"
-  zone_id  = var.zone_id
+  source = "./modules/Route53"
+  zone_id      = var.zone_id
+  record_name  = var.record_name
+  record_type  = var.record_type
+  record_value = var.record_value
 }

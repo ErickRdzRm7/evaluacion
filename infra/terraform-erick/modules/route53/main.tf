@@ -1,7 +1,7 @@
-resource "aws_route53_record" "atlantis" {
-  zone_id = var.zone_id    # ID de tu zona DNS
-  name    = "atlantiserickfrontend.com"
-  type    = "A"
+resource "aws_route53_record" "this" {
+  zone_id = var.zone_id
+  name    = var.record_name
+  type    = var.record_type
   ttl     = 300
-  records = ["18.118.157.213"]  # tu IP pública
+  records = [var.record_value]
 }
