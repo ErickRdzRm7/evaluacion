@@ -9,10 +9,6 @@ permissions:
   contents: write
   packages: write
 
-env:
-  AWS_REGION:  ${{ secrets.REGION }}
-  ECR_REPO:  ${{ secrets.ECR_REPO }}
-
 jobs:
   bump-version:
     runs-on: ubuntu-latest
@@ -51,39 +47,48 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.REGION }}
+          aws-region: ${{ secrets.REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: GitHubActions-Deploy
+          role-duration-seconds: 3600
       
       - name: Login to Amazon ECR
         run: |
-          ECR_REGISTRY=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
+          ECR_REGISTRY=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.REGION }}.amazonaws.com
           echo "ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
-          aws ecr get-login-password --region ${{ env.REGION }} | \
+          aws ecr get-login-password --region ${{ secrets.REGION }} | \
           docker login --username AWS --password-stdin ${ECR_REGISTRY}
       
       - name: Build, tag and push
         env:
-          BRANCH_NAME: ${{ github.ref_name }}
+          BRANCH_NAME: ${{ secrets.BRANCH_NAME || 'main' }}
         run: |
-          # Obtener short SHA y sanitizar branch name
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # Get short SHA and sanitize branch name
+          SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           SANITIZED_BRANCH=$(echo "${BRANCH_NAME}" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
           
-          # Construir y subir imágenes
+          # Build and tag images
           docker build \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${{ needs.bump-version.outputs.new_version }} \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:latest \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${SANITIZED_BRANCH} \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${SHORT_SHA} .
-
-          docker push ${ECR_REGISTRY}/${{ env.ECR_REPO }} --all-tags
+            -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:${{ needs.bump-version.outputs.new_version }} \
+            -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:latest \
+            -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:${SANITIZED_BRANCH} \
+            -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:${SHORT_SHA} .
+          
+          # Push all tags
+          docker push ${ECR_REGISTRY}/${{ secrets.ECR_REPO }} --all-tags
           
           echo "===================================="
-          echo "Imágenes subidas exitosamente:"
-          echo "Registry: ${ECR_REGISTRY}"
-          echo "Repositorio: ${{ env.ECR_REPO }}"
-          echo "Tags:"
-          echo "- ${{ needs.bump-version.outputs.new_version }}"
-          echo "- latest"
-          echo "- ${SANITIZED_BRANCH}"
-          echo "- ${SHORT_SHA}"
+          echo "✅ Images pushed to ECR:"
+          echo "- Version: ${{ needs.bump-version.outputs.new_version }}"
+          echo "- Latest"
+          echo "- Branch: ${SANITIZED_BRANCH}"
+          echo "- Commit: ${SHORT_SHA}"
           echo "===================================="
+      
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME }} \
+            --force-new-deployment \
+            --region ${{ secrets.REGION }}
