@@ -9,6 +9,10 @@ permissions:
   contents: write
   packages: write
 
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: app-frontend
+
 jobs:
   bump-version:
     runs-on: ubuntu-latest
@@ -47,37 +51,39 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.REGION }}
+          aws-region: ${{ env.AWS_REGION }}
       
       - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        run: |
+          ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          echo "ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${ECR_REGISTRY}
       
       - name: Build, tag and push
         env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY_URI }}
-          ECR_REPO: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: v${{ needs.bump-version.outputs.new_version }}
-          SHORT_SHA: ${{ github.sha }}
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
-          # Construir imagen con múltiples tags
-          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          BRANCH_NAME_SAFE=$(echo "${BRANCH_NAME}" | sed 's/\//-/g')
+          # Obtener short SHA y sanitizar branch name
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SANITIZED_BRANCH=$(echo "${BRANCH_NAME}" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          
+          # Construir y subir imágenes
           docker build \
-            -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG \
-            -t $ECR_REGISTRY/$ECR_REPO:latest \
-            -t $ECR_REGISTRY/$ECR_REPO:$BRANCH_NAME_SAFE \
-            -t $ECR_REGISTRY/$ECR_REPO:$SHORT_SHA .
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${{ needs.bump-version.outputs.new_version }} \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:latest \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${SANITIZED_BRANCH} \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${SHORT_SHA} .
           
-          # Empujar todos los tags
-          docker push $ECR_REGISTRY/$ECR_REPO --all-tags
+          docker push ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} --all-tags
           
-          # Salida para verificación
           echo "===================================="
-          echo "Imágenes subidas a ECR:"
-          echo "- Versión: $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
-          echo "- Latest: $ECR_REGISTRY/$ECR_REPO:latest"
-          echo "- Rama: $ECR_REGISTRY/$ECR_REPO:$BRANCH_NAME_SAFE"
-          echo "- Commit: $ECR_REGISTRY/$ECR_REPO:$SHORT_SHA"
+          echo "Imágenes subidas exitosamente:"
+          echo "Registry: ${ECR_REGISTRY}"
+          echo "Repositorio: ${{ env.ECR_REPOSITORY }}"
+          echo "Tags:"
+          echo "- ${{ needs.bump-version.outputs.new_version }}"
+          echo "- latest"
+          echo "- ${SANITIZED_BRANCH}"
+          echo "- ${SHORT_SHA}"
           echo "===================================="
