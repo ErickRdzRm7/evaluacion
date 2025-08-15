@@ -51,13 +51,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ env.REGION }}
       
       - name: Login to Amazon ECR
         run: |
-          ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          ECR_REGISTRY=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
           echo "ECR_REGISTRY=${ECR_REGISTRY}" >> $GITHUB_ENV
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          aws ecr get-login-password --region ${{ env.REGION }} | \
           docker login --username AWS --password-stdin ${ECR_REGISTRY}
       
       - name: Build, tag and push
@@ -70,17 +70,17 @@ jobs:
           
           # Construir y subir imágenes
           docker build \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${{ needs.bump-version.outputs.new_version }} \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:latest \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${SANITIZED_BRANCH} \
-            -t ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${SHORT_SHA} .
-          
-          docker push ${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} --all-tags
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${{ needs.bump-version.outputs.new_version }} \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:latest \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${SANITIZED_BRANCH} \
+            -t ${ECR_REGISTRY}/${{ env.ECR_REPO }}:${SHORT_SHA} .
+
+          docker push ${ECR_REGISTRY}/${{ env.ECR_REPO }} --all-tags
           
           echo "===================================="
           echo "Imágenes subidas exitosamente:"
           echo "Registry: ${ECR_REGISTRY}"
-          echo "Repositorio: ${{ env.ECR_REPOSITORY }}"
+          echo "Repositorio: ${{ env.ECR_REPO }}"
           echo "Tags:"
           echo "- ${{ needs.bump-version.outputs.new_version }}"
           echo "- latest"
