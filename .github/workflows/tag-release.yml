@@ -10,8 +10,8 @@ permissions:
   packages: write
 
 env:
-  AWS_REGION: us-east-2
-  ECR_REPOSITORY: app-frontend
+  AWS_REGION:  ${{ secrets.REGION }}
+  ECR_REPO:  ${{ secrets.ECR_REPO }}
 
 jobs:
   bump-version:
