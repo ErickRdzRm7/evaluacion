@@ -1,21 +1,64 @@
-name: Tag Release
+name: Tag Release and Deploy to ECR
+
 on:
   push:
     branches:
       - main
+
 permissions:
-  contents: write   
+  contents: write
+  packages: write
 
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+    
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          # Configura git
+        with:
+          fetch-depth: 0 
+      
+      - name: Configure Git
+        run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          
-          # Actualiza la versión y empuja el cambio y el tag
-          npm version patch -m "chore: release v%s"
-          git push --follow-tags
+      
+      - name: Bump version and push tag
+        id: version
+        run: |
+          NEW_VERSION=$(npm version patch --no-git-tag-version | sed 's/v//')
+          git add package.json
+          git commit -m "chore: release v${NEW_VERSION}"
+          git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
+          git push origin main --follow-tags
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+  deploy-to-ecr:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Build, tag, and push to ECR
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
+          IMAGE_TAG: v${{ needs.bump-version.outputs.new_version }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+          echo "Pushed image to ECR: $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
