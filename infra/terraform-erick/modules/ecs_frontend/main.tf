@@ -23,7 +23,6 @@ resource "aws_ecs_task_definition" "frontend" {
   ])
 }
 
-
 resource "aws_ecs_service" "frontend" {
   name            = "${var.app_name}-frontend"
   cluster         = var.ecs_cluster_id
