@@ -39,3 +39,4 @@ module "monitoring" {
   cluster_name = "eduia-cluster"
   service_name = "eduia-service"
 }
+# test
