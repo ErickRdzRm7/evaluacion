@@ -1,102 +1,45 @@
-name: CI/CD Pipeline - Frontend & Infra
+name: CI - Build & Test
+# Disparador ÚNICO: Se ejecuta solo cuando se abre o actualiza un PR hacia tus ramas principales.
 on:
   pull_request:
     branches:
       - main
-    types:
-      - opened
-      - reopened
-      - synchronize
-  push:
-    branches:
       - development
       - staging
-  issue_comment:
-    types:
-      - created
-  workflow_dispatch:
 
+  workflow_dispatch: # Permite ejecución manual
+  
 permissions:
-  id-token: write
-  contents: write 
-
+  contents: write
 env:
   NODE_VERSION: '24.3.0'
-  APP_NAME: evaluacion
-  DEPLOY_ENV: dev
   AWS_REGION: us-east-2
 
 jobs:
-  ci-build-test:
+  build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    permissions: 
+      id-token: write
+      contents: read  
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ./package-lock.json
-      - run: make install-ci
-        name: Install Node.js dependencies
-      - run: make Lint
-        name: Lint
-      - run: make test
-        name: Run Unit Tests
-      - name: Bump Version
-        if: github.ref == 'refs/heads/main'
-        run: |
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "📦 Nueva versión: $VERSION"
 
-  atlantis-apply:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - name: Install Atlantis CLI
-        run: |
-          curl -sL https://github.com/runatlantis/atlantis/releases/latest/download/atlantis_linux_amd64.zip -o atlantis.zip
-          unzip atlantis.zip
-          sudo mv atlantis /usr/local/bin/
-      - name: Run Atlantis Apply
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.REGION }}
-          ATLANTIS_GH_TOKEN: ${{ secrets.ATLANTIS_GH_TOKEN }}
-          ATLANTIS_GH_USER: ErickRdzRm7
-        run: |
-          # Aplica Terraform usando Atlantis CLI
-          atlantis apply -d .
+      - name: Install Node.js dependencies
+        run: make install-ci
 
-  deploy-app:
-    runs-on: ubuntu-latest
-    needs: atlantis-apply
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build & Push Docker Image
-        run: |
-          IMAGE_TAG_BRANCH=${GITHUB_REF_NAME#refs/heads/}
-          IMAGE_TAG_SHA=${GITHUB_SHA::8}
-          IMAGE_TAG_LATEST=latest
-          docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST .
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker tag $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_LATEST
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_BRANCH
-          docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG_SHA
-      - name: Update ECS Service
-        run: |
-          aws ecs update-service \
-            --cluster $ECS_CLUSTER_NAME \
-            --service $ECS_SERVICE_NAME \
-            --force-new-deployment \
-            --region $AWS_REGION
+      - name: Lint
+        run: make Lint
+
+      - name: Run Unit Tests
+        run: make test
