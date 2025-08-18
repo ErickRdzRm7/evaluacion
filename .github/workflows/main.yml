@@ -19,7 +19,7 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    permissions: # Es buena práctica mantenerlo por si necesitas acceder a AWS para algo
+    permissions: 
       id-token: write
       contents: read  
     steps:
@@ -44,7 +44,6 @@ jobs:
 
       - name: Run Unit Tests
         run: make test
-
       - name: Check if Terraform is installed
         id: check_terraform
         run: |
