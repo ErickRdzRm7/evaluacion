@@ -1,27 +1,18 @@
 name: Tag Release and Deploy to ECR
+
 on:
   push:
     branches:
       - main
+
 permissions:
   contents: write
   packages: write
+
 jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: |
-          # Configura git
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          
-          # Actualiza la versión y empuja el cambio y el tag
-          npm version patch -m "chore: release v%s"
-          git push --follow-tags
-    outputs:
-      new_version: ${{ steps.version.outputs.new_version }}
-   steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -40,11 +31,12 @@ jobs:
           git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
           git push origin main --follow-tags
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
 
   deploy-to-ecr:
     needs: bump-version
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
       
@@ -53,6 +45,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-2 
+      
       - name: Login to Amazon ECR
         run: |
           ECR_REGISTRY=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.REGION }}.amazonaws.com
@@ -67,6 +60,7 @@ jobs:
           # Get short SHA and sanitize branch name
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           SANITIZED_BRANCH=$(echo "${BRANCH_NAME}" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          
           # Build and tag images
           docker build \
             -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:${{ needs.bump-version.outputs.new_version }} \
@@ -78,7 +72,7 @@ jobs:
           docker push ${ECR_REGISTRY}/${{ secrets.ECR_REPO }} --all-tags
           
           echo "===================================="
-          echo "✅ Images pushed to ECR:"
+          echo "Images pushed to ECR:"
           echo "- Version: ${{ needs.bump-version.outputs.new_version }}"
           echo "- Latest"
           echo "- Branch: ${SANITIZED_BRANCH}"
