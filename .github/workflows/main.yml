@@ -25,6 +25,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # fetch-depth: 0 es necesario para que el script de Atlantis pueda obtener el hash del commit
         with:
           fetch-depth: 0 
 
@@ -43,3 +44,24 @@ jobs:
 
       - name: Run Unit Tests
         run: make test
+      - name: Check if Terraform is installed
+        id: check_terraform
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "Terraform not found. Installing..."
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt update && sudo apt install -y terraform
+          else
+            echo "Terraform is already installed."
+          fi
+
+      - name: Run terraform init
+        run: make terraform-init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Run terraform validate
+        run: make terraform-validate

@@ -1,8 +1,10 @@
 name: Tag Release and Deploy to ECR
+
 on:
   push:
     branches:
       - main
+
 permissions:
   id-token: write  
   contents: write
@@ -11,9 +13,6 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-    outputs:
-      new_version: ${{ steps.version.outputs.new_version }}
-    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,11 +32,12 @@ jobs:
           git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
           git push origin main --follow-tags
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
 
   deploy-to-ecr:
     needs: bump-version
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
       - name: Setup AWS CLI
@@ -45,6 +45,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-2 
+      
       - name: Login to Amazon ECR
         run: |
           ECR_REGISTRY=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.REGION }}.amazonaws.com
@@ -59,6 +60,7 @@ jobs:
           # Get short SHA and sanitize branch name
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           SANITIZED_BRANCH=$(echo "${BRANCH_NAME}" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          
           # Build and tag images
           docker build \
             -t ${ECR_REGISTRY}/${{ secrets.ECR_REPO }}:${{ needs.bump-version.outputs.new_version }} \

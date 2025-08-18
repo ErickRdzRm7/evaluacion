@@ -27,6 +27,7 @@ module "ecs_frontend" {
   app_name           = var.app_name
   ecs_cluster_id     = aws_ecs_cluster.main.id
   subnet_ids         = module.network.public_subnet_ids
+  image_tag          = var.image_tag
   vpc_id             = module.network.vpc_id
   frontend_image     = module.ecr.ecr_frontend_repo_url
   security_group_ids = [module.network.ecs_sg_frontend_id]

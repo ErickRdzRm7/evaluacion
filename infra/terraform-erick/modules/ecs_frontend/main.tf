@@ -7,6 +7,11 @@ resource "aws_ecs_task_definition" "frontend" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
+  tags = {
+    "image_tag" = var.image_tag
+    "Name"      = "${var.app_name}-frontend-task"
+  }
+
   container_definitions = jsonencode([
     {
       name      = "frontend"

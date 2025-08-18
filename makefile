@@ -69,10 +69,3 @@ terraform-init: check-terraform verify-dirs
 terraform-validate: check-terraform verify-dirs
 	@echo "Validating Terraform..."
 	cd $(INFRA_DIR) && terraform validate
-
-terraform-plan:
-	@echo "Running Terraform plan..."
-	cd $(INFRA_DIR) && \
-	terraform plan \
-		-var-file="terraform.tfvars" \
-		-out=tfplan.out
