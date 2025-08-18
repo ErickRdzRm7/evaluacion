@@ -8,7 +8,7 @@ resource "aws_ecs_task_definition" "frontend" {
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   tags = {
-    "image_tag" = var.image_tag
+   // "image_tag" = var.image_tag
     "Name"      = "${var.app_name}-frontend-task"
   }
 
