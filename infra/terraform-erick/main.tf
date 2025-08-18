@@ -39,4 +39,10 @@ module "monitoring" {
   cluster_name = "eduia-cluster"
   service_name = "eduia-service"
 }
-# test
+module "route53" {
+  source = "./modules/route53"
+  zone_id      = var.zone_id
+  record_name  = var.record_name
+  record_type  = var.record_type
+  record_value = var.record_value
+}
