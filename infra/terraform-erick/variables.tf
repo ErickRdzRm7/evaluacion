@@ -29,6 +29,11 @@ variable "ecs_sg_frontend" {
   default     = "ecs_sg_frontend"
 }
 
+variable "image_tag" {
+  type        = string
+  description = "Tag de la imagen Docker para el servicio ECS"
+  default     = "latest"
+}
 //variable "zone_id" {
  // type        = string
  // description = "ID de la zona DNS para Route53"

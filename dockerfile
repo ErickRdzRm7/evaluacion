@@ -6,7 +6,6 @@ WORKDIR /app
 # Instala expo-cli sin cache para reducir tamaño
 RUN npm install -g expo-cli --no-cache
 
-
 # Copia archivos de dependencias
 COPY package.json package-lock.json ./
 
