@@ -89,6 +89,7 @@ jobs:
             --region ${{ secrets.REGION }}
             
       - name: Create GitHub Deployment
+        id: deployment 
         uses: chrnorm/deployment-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -100,5 +101,7 @@ jobs:
         uses: chrnorm/deployment-status@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: success
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          auto-inactive: true
