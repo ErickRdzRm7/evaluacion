@@ -1,5 +1,4 @@
 name: CI - Build & Test
-# Disparador ÚNICO: Se ejecuta solo cuando se abre o actualiza un PR hacia tus ramas principales.
 on:
   pull_request:
     branches:
@@ -7,7 +6,7 @@ on:
     push:
         branches:
           - main
-          - development
+          - dev
           - staging
 
   workflow_dispatch: # Permite ejecución manual
