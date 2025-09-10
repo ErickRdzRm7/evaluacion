@@ -39,6 +39,3 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 [![CI - Build & Test](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/main.yml/badge.svg?event=status)](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/main.yml)
 
-
-## show the information of the deployments 
-[![Tag Release and Deploy to ECR](https://github.com/erick/myapp/actions/workflows/deploy.yml/badge.svg)](https://github.com/erick/myapp/actions/workflows/deploy.yml)
