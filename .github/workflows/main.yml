@@ -12,7 +12,6 @@ on:
       - development
       - staging
 
-      
   workflow_dispatch: # Permite ejecución manual
   
 permissions:
