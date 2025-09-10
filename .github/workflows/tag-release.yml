@@ -86,3 +86,18 @@ jobs:
             --service ${{ secrets.ECS_SERVICE_NAME }} \
             --force-new-deployment \
             --region ${{ secrets.REGION }}
+            
+      - name: Create GitHub Deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          ref: ${{ github.sha }}
+          task: deploy
+
+      - name: Mark deployment as successful
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: success
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
