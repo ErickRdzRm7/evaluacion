@@ -1,10 +1,10 @@
 name: Tag Release and Deploy to ECR
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-
+      
 permissions:
   id-token: write  
   contents: write
