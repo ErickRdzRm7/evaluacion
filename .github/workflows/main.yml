@@ -6,7 +6,10 @@ on:
       - main
       - development
       - staging
-
+    push:
+        branches:
+          - main
+          
   workflow_dispatch: # Permite ejecución manual
   
 permissions:
