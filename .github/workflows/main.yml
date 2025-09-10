@@ -4,19 +4,19 @@ on:
   pull_request:
     branches:
       - main
-      - development
-      - staging
     push:
         branches:
           - main
-          
+          - development
+          - staging
+
   workflow_dispatch: # Permite ejecución manual
   
 permissions:
   contents: write
 env:
   NODE_VERSION: '24.3.0'
-  AWS_REGION: us-east-2
+  AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   build-and-test:
