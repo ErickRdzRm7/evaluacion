@@ -37,5 +37,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## workflow badge status
 
-[![CI - Build & Test](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/main.yml/badge.svg?event=status)](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/main.yml)
-
+[![Tag Release and Deploy to ECR](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/tag-release.yml/badge.svg)](https://github.com/ErickRdzRm7/evaluacion/actions/workflows/tag-release.yml)
