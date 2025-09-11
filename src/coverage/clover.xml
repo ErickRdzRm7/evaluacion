@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1754599765872" clover="3.2.0">
-  <project timestamp="1754599765872" name="All files">
+<coverage generated="1757627343604" clover="3.2.0">
+  <project timestamp="1757627343604" name="All files">
     <metrics statements="114" coveredstatements="0" conditionals="2" coveredconditionals="1" methods="2" coveredmethods="1" elements="118" coveredelements="2" complexity="0" loc="114" ncloc="114" packages="1" files="2" classes="2"/>
-    <file name="layout.tsx" path="/Users/erick/Desktop/evaluacion/evaluacion/src/app/layout.tsx">
+    <file name="layout.tsx" path="/Users/erick/Desktop/evaluacion/src/app/layout.tsx">
       <metrics statements="26" coveredstatements="0" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
       <line num="2" count="0" type="stmt"/>
       <line num="3" count="0" type="stmt"/>
@@ -31,7 +31,7 @@
       <line num="32" count="0" type="stmt"/>
       <line num="34" count="0" type="stmt"/>
     </file>
-    <file name="page.tsx" path="/Users/erick/Desktop/evaluacion/evaluacion/src/app/page.tsx">
+    <file name="page.tsx" path="/Users/erick/Desktop/evaluacion/src/app/page.tsx">
       <metrics statements="88" coveredstatements="0" conditionals="1" coveredconditionals="0" methods="1" coveredmethods="0"/>
       <line num="1" count="0" type="cond" truecount="0" falsecount="1"/>
       <line num="3" count="0" type="stmt"/>

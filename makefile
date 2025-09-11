@@ -34,7 +34,8 @@ install-ci: check-npm verify-dirs
 # --- Lint ---
 Lint: check-npm
 	@echo "🔍 Linting frontend..."
-	npm run lint -- --fix
+	npm run lint
+	
 # --- Tests ---
 test: check-npm verify-dirs
 	@echo "Running frontend unit tests..."
