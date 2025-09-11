@@ -15,12 +15,12 @@ install-ci:
 	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
 	
 # --- Lint ---
-Lint: check-npm
+Lint: 
 	@echo "Linting frontend..."
 	npx biome check --fix .
 	
 # --- Tests ---
-test: check-npm verify-dirs
+test:
 	@echo "Running frontend unit tests..."
 	cd $(SRC_DIR) && npx vitest run --coverage
 
@@ -28,16 +28,16 @@ test-watch:
 	cd $(SRC_DIR) && npx vitest
 
 # --- Dev Server ---
-dev: check-npm verify-dirs
+dev: 
 	@echo "Starting dev server..."
 	cd $(SRC_DIR) && npm run dev
 
 
 # --- Terraform ---
-terraform-init: check-terraform verify-dirs
+terraform-init: 
 	@echo "Terraform init in $(INFRA_DIR)..."
 	cd $(INFRA_DIR) && terraform init
 
-terraform-validate: check-terraform verify-dirs
+terraform-validate: 
 	@echo "Validating Terraform..."
 	cd $(INFRA_DIR) && terraform validate
