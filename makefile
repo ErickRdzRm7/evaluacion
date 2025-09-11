@@ -1,4 +1,5 @@
 ENV ?= dev
+IMAGE_NAME ?= dockerfile
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 #BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
@@ -9,7 +10,7 @@ INFRA_DIR=infra/terraform-erick
 #ECR_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(ECR_REPO)
 
 # --- Install ---
-install-ci: check-npm verify-dirs
+install-ci:
 	@if [ -f package.json ]; then npm ci; fi
 	@if [ -f $(SRC_DIR)/package.json ]; then cd $(SRC_DIR) && npm ci; fi
 	
