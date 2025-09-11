@@ -1,4 +1,4 @@
-
+ENV ?= dev
 SRC_DIR=./src
 INFRA_DIR=infra/terraform-erick
 #BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
