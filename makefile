@@ -34,7 +34,7 @@ install-ci: check-npm verify-dirs
 # --- Lint ---
 Lint: check-npm
 	@echo "🔍 Linting frontend..."
-	npm run lint
+	npx biome check --fix .
 	
 # --- Tests ---
 test: check-npm verify-dirs
