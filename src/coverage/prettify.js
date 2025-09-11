@@ -105,7 +105,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 			}
 			var ag = String.fromCharCode(af);
 			if (ag === "\\" || ag === "-" || ag === "[" || ag === "]") {
-				ag = "\\" + ag;
+				ag = `\\${ag}`;
 			}
 			return ag;
 		}
@@ -206,12 +206,12 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 					if ("\\" === ag.charAt(0)) {
 						var af = +ag.substring(1);
 						if (af && af <= am) {
-							aj[ak] = "\\" + an[am];
+							aj[ak] = `\\${an[am]}`;
 						}
 					}
 				}
 			}
-			for (var ak = 0, am = 0; ak < ah; ++ak) {
+			for (var ak = 0, _am = 0; ak < ah; ++ak) {
 				if ("^" === aj[ak] && "^" !== aj[ak + 1]) {
 					aj[ak] = "";
 				}
@@ -226,7 +226,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 						if (ai !== "\\") {
 							aj[ak] = ag.replace(/[a-zA-Z]/g, (ao) => {
 								var ap = ao.charCodeAt(0);
-								return "[" + String.fromCharCode(ap & ~32, ap | 32) + "]";
+								return `[${String.fromCharCode(ap & ~32, ap | 32)}]`;
 							});
 						}
 					}
@@ -238,9 +238,9 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 		for (var V = 0, U = Z.length; V < U; ++V) {
 			var ae = Z[V];
 			if (ae.global || ae.multiline) {
-				throw new Error("" + ae);
+				throw new Error(`${ae}`);
 			}
-			aa.push("(?:" + W(ae) + ")");
+			aa.push(`(?:${W(ae)})`);
 		}
 		return new RegExp(aa.join("|"), ac ? "gi" : "g");
 	}
@@ -332,7 +332,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 					}
 				}
 				var af = Y[1];
-				var aa = "" + af;
+				var aa = `${af}`;
 				if (!Object.hasOwn(ag, aa)) {
 					ah.push(af);
 					ag[aa] = null;
@@ -464,19 +464,15 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 		if (T.regexLiterals) {
 			var X =
 				"/(?=[^/*])(?:[^/\\x5B\\x5C]|\\x5C[\\s\\S]|\\x5B(?:[^\\x5C\\x5D]|\\x5C[\\s\\S])*(?:\\x5D|$))+/";
-			S.push(["lang-regex", new RegExp("^" + M + "(" + X + ")")]);
+			S.push(["lang-regex", new RegExp(`^${M}(${X})`)]);
 		}
 		var V = T.types;
 		if (V) {
 			S.push([O, V]);
 		}
-		var U = ("" + T.keywords).replace(/^ | $/g, "");
+		var U = `${T.keywords}`.replace(/^ | $/g, "");
 		if (U.length) {
-			S.push([
-				z,
-				new RegExp("^(?:" + U.replace(/[\s,]+/g, "|") + ")\\b"),
-				null,
-			]);
+			S.push([z, new RegExp(`^(?:${U.replace(/[\s,]+/g, "|")})\\b`), null]);
 		}
 		W.push([F, /^\s+/, null, " \r\n\t\xA0"]);
 		S.push(
@@ -598,7 +594,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 		var X = Math.max(0, (ag - 1) | 0) || 0;
 		for (var Y = 0, T = W.length; Y < T; ++Y) {
 			af = W[Y];
-			af.className = "L" + ((Y + X) % 10);
+			af.className = `L${(Y + X) % 10}`;
 			if (!af.firstChild) {
 				af.appendChild(ac.createTextNode("\xA0"));
 			}
@@ -641,11 +637,11 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 			aq = W;
 		}
 		Y = X.length = ar;
-		var ae = null;
+		var _ae = null;
 		while (ah < T) {
-			var af = aa[ah];
+			var _af = aa[ah];
 			var S = aa[ah + 2] || an;
-			var ag = X[Z];
+			var _ag = X[Z];
 			var ap = X[Z + 2] || an;
 			var W = Math.min(S, ap);
 			var ak = aa[ah + 1];
@@ -812,7 +808,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 			D(V);
 		} catch (W) {
 			if ("console" in window) {
-				console.log(W && W.stack ? W.stack : W);
+				console.log(W?.stack ? W.stack : W);
 			}
 		}
 	}
@@ -841,13 +837,13 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 		var W = Date;
 		if (!W.now) {
 			W = {
-				now: () => +new Date(),
+				now: () => Date.now(),
 			};
 		}
 		var X = 0;
 		var S;
 		var ab = /\blang(?:uage)?-([\w.]+)(?!\S)/;
-		var ae = /\bprettyprint\b/;
+		var _ae = /\bprettyprint\b/;
 		function U() {
 			var ag = window.PR_SHOULD_USE_CONTINUATION ? W.now() + 250 : Infinity;
 			for (; X < T.length && W.now() < ag; X++) {
@@ -877,7 +873,7 @@ window.PR_SHOULD_USE_CONTINUATION = true;
 					}
 					if (!al) {
 						var af = aj.className.match(/\blinenums\b(?::(\d+))?/);
-						af = af ? (af[1] && af[1].length ? +af[1] : true) : false;
+						af = af ? (af[1]?.length ? +af[1] : true) : false;
 						if (af) {
 							Q(aj, af);
 						}
