@@ -4,7 +4,7 @@ variable "app_name" {
 }
 variable "vpc_cidr" {
   type        = string
-  default = "10.0.0.0/16"
+  default     = "10.0.0.0/16"
   description = "CIDR block for VPC"
 }
 variable "app_subnet_cidr" {
@@ -17,7 +17,7 @@ variable "availability_zones" {
 }
 variable "private_subnet_cidrs" {
   type        = list(string)
-   default = ["10.0.10.0/24", "10.0.11.0/24"]
+  default     = ["10.0.10.0/24", "10.0.11.0/24"]
   description = "CIDR blocks for private subnets"
 }
 variable "public_subnet_cidrs" {

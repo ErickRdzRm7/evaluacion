@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket       = "mi-terraform-state-erick"
-    key          = "infra/terraform-erick/terraform.tfstate"
-    region       = "us-east-2"
+    bucket = "mi-terraform-state-erick"
+    key    = "infra/terraform-erick/terraform.tfstate"
+    region = "us-east-2"
 
   }
 }
@@ -14,8 +14,8 @@ module "network" {
   availability_zones = var.availability_zones
 }
 module "ecr" {
-  source      = "./modules/ecr"
-  app_name    = var.app_name
+  source   = "./modules/ecr"
+  app_name = var.app_name
 }
 
 resource "aws_ecs_cluster" "main" {

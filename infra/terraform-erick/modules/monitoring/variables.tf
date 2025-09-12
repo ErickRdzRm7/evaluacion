@@ -11,7 +11,7 @@ variable "cluster_name" {
 variable "service_name" {
   type    = string
   default = "default-service-name"
-}   
+}
 
 variable "cpu_threshold" {
   description = "CPU usage threshold for alarm"
