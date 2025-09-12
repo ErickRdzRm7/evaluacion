@@ -6,7 +6,6 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
 RUN npm run build
-
 # ---
 # Segunda etapa: 'runner' 
 FROM node:18-alpine AS runner
@@ -30,9 +29,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 ENV NODE_ENV=production
 ENV PORT=80
 ENV HOSTNAME="0.0.0.0"
-
 EXPOSE 80
-
 # Ejecutar como usuario no-root PERO con permisos para puerto 80
 USER nextjs:nodejs
 
