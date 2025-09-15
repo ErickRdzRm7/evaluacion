@@ -25,10 +25,9 @@ resource "aws_ecs_task_definition" "frontend" {
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 120  # Más tiempo para que Next.js inicie
+        startPeriod = 120  
       }
       
-      # ✅ LOG CONFIGURATION (obligatorio para ver logs)
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -38,7 +37,6 @@ resource "aws_ecs_task_definition" "frontend" {
         }
       }
       
-      # ✅ ENVIRONMENT VARIABLES (críticas para Next.js)
       environment = [
         {
           name  = "NODE_ENV"
