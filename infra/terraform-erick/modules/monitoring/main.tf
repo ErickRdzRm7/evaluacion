@@ -19,6 +19,6 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu_usage" {
   }
 
   alarm_description         = "Alarm when CPU usage exceeds ${var.cpu_threshold}%"
-  alarm_actions             = [] # o tu SNS ARN si lo tienes
+  alarm_actions             = [] 
   insufficient_data_actions = []
 }

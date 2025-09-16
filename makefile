@@ -27,12 +27,6 @@ test:
 test-watch:
 	cd $(SRC_DIR) && npx vitest
 
-# --- Dev Server ---
-dev: 
-	@echo "Starting dev server..."
-	cd $(SRC_DIR) && npm run dev
-
-
 # --- Terraform ---
 terraform-init: 
 	@echo "Terraform init in $(INFRA_DIR)..."
