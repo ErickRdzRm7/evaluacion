@@ -16,7 +16,7 @@ USER root
 RUN apk add --no-cache libcap && \
     setcap 'cap_net_bind_service=+ep' /usr/local/bin/node
 
-# CREAR usuario y grupo (en orden correcto)
+# CREAR usuario y grupo
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs -G nodejs
 

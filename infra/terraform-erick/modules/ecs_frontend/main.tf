@@ -2,8 +2,8 @@ resource "aws_ecs_task_definition" "frontend" {
   family                   = "${var.app_name}-frontend"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = 1024
-  memory                   = 2048
+  cpu                      = 256
+  memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
@@ -25,10 +25,9 @@ resource "aws_ecs_task_definition" "frontend" {
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 120  # Más tiempo para que Next.js inicie
+        startPeriod = 120  
       }
       
-      # ✅ LOG CONFIGURATION (obligatorio para ver logs)
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -38,7 +37,6 @@ resource "aws_ecs_task_definition" "frontend" {
         }
       }
       
-      # ✅ ENVIRONMENT VARIABLES (críticas para Next.js)
       environment = [
         {
           name  = "NODE_ENV"
