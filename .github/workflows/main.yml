@@ -3,10 +3,13 @@ on:
   pull_request:
     branches:
       - main
+      - development
+      - staging
+
   push:
     branches:
       - main
-      - dev
+      - development
       - staging
 
   workflow_dispatch: # Permite ejecución manual
