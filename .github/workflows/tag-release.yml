@@ -61,7 +61,7 @@ jobs:
       
       - name: Build, tag and push
         env:
-          BRANCH_NAME: ${{ secrets.BRANCH_NAME || 'main' }}
+          BRANCH_NAME: ${{ secrets.BRANCH_NAME || 'main' || 'dev' || 'staging' }}
         run: |
           # Get short SHA and sanitize branch name
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
