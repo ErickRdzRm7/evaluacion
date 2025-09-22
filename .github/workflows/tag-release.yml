@@ -9,7 +9,6 @@ on:
       - dev
       - staging
 
-
 permissions:
   id-token: write  
   contents: write
