@@ -1,7 +1,10 @@
 name: Tag Release and Deploy to ECR
 
 on:
+<<<<<<< HEAD
   push:
+=======
+>>>>>>> 6d6dcb56147b045105cd7924adc4f8830306d5c2
   pull_request:
     types:
       - closed
