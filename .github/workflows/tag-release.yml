@@ -84,7 +84,8 @@ jobs:
           echo "- Branch: ${SANITIZED_BRANCH}"
           echo "- Commit: ${SHORT_SHA}"
           echo "===================================="
-      
+
+          
       - name: Update ECS Service
         run: |
           aws ecs update-service \
